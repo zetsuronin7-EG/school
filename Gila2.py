@@ -1,488 +1,1179 @@
-import streamlit as st
-import pandas as pd
-from datetime import date, datetime
-import uuid
+# -*- coding: utf-8 -*-
+"""
+نظام إدارة مدرسة "التوكل جيلا"
+مدرسة نانوي صناعي - تدريب مزدوج
+تم البناء باستخدام Python + Streamlit
+"""
 
-# ================== 1. إعدادات الصفحة والتصميم RTL الحقيقي ==================
+import re
+import random
+from datetime import date, timedelta
+
+import pandas as pd
+import streamlit as st
+
+# ==========================================================
+# إعداد الصفحة
+# ==========================================================
 st.set_page_config(
-    page_title="مدرسة التوكل جيلا - نظام الإدارة",
+    page_title="مدرسة التوكل جيلا - نظام إدارة المدرسة",
     page_icon="🏫",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# CSS حقيقي RTL يعالج Sidebar والمدخلات و Streamlit الحديث
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+# ==========================================================
+# التنسيق العام واتجاه RTL + نقل القائمة الجانبية لليمين
+# ==========================================================
+st.markdown(
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Cairo', sans-serif!important;
+    html, body, [class*="css"], .stApp {
+        font-family: 'Cairo', sans-serif !important;
     }
-   .stApp {
+
+    .stApp {
         direction: rtl;
         text-align: right;
     }
-    /* معالجة القائمة الجانبية */
-    [data-testid="stSidebar"] {
+
+    /* ---------- نقل القائمة الجانبية إلى اليمين ---------- */
+    div[data-testid="stAppViewContainer"] {
+        flex-direction: row-reverse;
+    }
+    section[data-testid="stSidebar"] {
+        direction: rtl;
+        text-align: right;
+        order: 2;
+        right: 0;
+        left: auto;
+        border-left: 2px solid #0d6efd;
+        border-right: none;
+    }
+    section[data-testid="stSidebar"] * {
+        text-align: right !important;
+    }
+    section[data-testid="stSidebar"] .stRadio label {
+        display: flex;
+        justify-content: flex-start;
+        flex-direction: row-reverse;
+    }
+    [data-testid="stSidebarNav"] {
+        direction: rtl;
+    }
+
+    /* ---------- الحقول والنصوص ---------- */
+    input, textarea, select,
+    .stTextInput input, .stNumberInput input,
+    .stDateInput input, .stTextArea textarea {
+        direction: rtl !important;
+        text-align: right !important;
+    }
+    div[data-baseweb="input"], div[data-baseweb="textarea"] {
+        direction: rtl;
+    }
+    div[data-baseweb="select"] > div {
         direction: rtl;
         text-align: right;
     }
-    [data-testid="stSidebar"].stMarkdown, [data-testid="stSidebar"] label, [data-testid="stSidebar"].stButton {
-        text-align: right!important;
-        direction: rtl!important;
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="menu"] {
+        direction: rtl;
+        text-align: right;
     }
-    /* معالجة حقول الإدخال */
-   .stTextInput input,.stNumberInput input,.stSelectbox div[data-baseweb="select"] {
-        direction: rtl!important;
-        text-align: right!important;
+    label, p, h1, h2, h3, h4, h5, h6, span, div {
+        text-align: right;
     }
-    /* عناوين */
-    h1, h2, h3, h4, h5, h6, p, label,.stMetric {
-        direction: rtl!important;
-        text-align: right!important;
+    .stMarkdown, .stText, .stCaption {
+        text-align: right;
     }
-    /* كروت */
-   .card {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        border-right: 6px solid #1a73e8;
-        margin-bottom: 20px;
+
+    /* ---------- الأزرار ---------- */
+    .stButton > button,
+    .stFormSubmitButton > button,
+    .stDownloadButton > button {
+        direction: rtl;
+        font-family: 'Cairo', sans-serif !important;
+        border-radius: 12px;
+        font-weight: 700;
+        width: 100%;
     }
-   .login-card {
-        background-color: white;
-        padding: 40px;
+
+    /* ---------- الكروت والمؤشرات ---------- */
+    [data-testid="stMetric"] {
+        direction: rtl;
+        text-align: right;
+        background: linear-gradient(135deg, #f8fbff 0%, #e6f0ff 100%);
+        border: 1px solid #cfe2ff;
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
+    }
+    [data-testid="stMetricLabel"] {
+        text-align: right !important;
+        font-weight: 700;
+    }
+    [data-testid="stMetricValue"] {
+        text-align: right !important;
+        color: #0d6efd;
+        font-weight: 900;
+    }
+
+    /* ---------- الجداول ---------- */
+    [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
+        direction: rtl;
+    }
+
+    /* ---------- التبويبات ---------- */
+    .stTabs [data-baseweb="tab-list"] {
+        direction: rtl;
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 700;
+        border-radius: 10px 10px 0 0;
+    }
+
+    /* ---------- صندوق تسجيل الدخول ---------- */
+    .login-box {
+        background: linear-gradient(135deg, #ffffff 0%, #eef5ff 100%);
+        border: 2px solid #0d6efd;
         border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        max-width: 450px;
-        margin: 80px auto;
-        text-align: center;
-        border-top: 6px solid #1a73e8;
+        padding: 26px 22px;
+        box-shadow: 0 6px 22px rgba(13, 110, 253, 0.15);
     }
-</style>
-""", unsafe_allow_html=True)
+    .app-title {
+        text-align: center !important;
+        color: #0d6efd;
+        font-weight: 900;
+        font-size: 34px;
+        margin-bottom: 4px;
+    }
+    .app-sub {
+        text-align: center !important;
+        color: #495057;
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+    .card {
+        background: #ffffff;
+        border: 1px solid #dbe7ff;
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        margin-bottom: 12px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# ================== 2. البيانات الافتراضية ومنع الشاشات الفارغة ==================
-def init_session_state():
-    if 'initialized' not in st.session_state:
-        # المستخدمين والصلاحيات
-        st.session_state.users = {
-            "admin": {"password": "admin123", "role": "admin", "active": True, "teacher_code": None},
-        }
-        # بيانات مدير المدرسة الافتراضية
-        st.session_state.director = {
-            "name": "أ. محمد أحمد التوكل",
-            "national_id": "27501011201234",
-            "phone": "01012345678",
-            "code": "DIR-001",
-            "qualification": "بكالوريوس إدارة تربوية",
-            "qual_year": "2005"
-        }
-        # بيانات المدرسين الافتراضية
-        st.session_state.teachers = [
-            {
-                "id": str(uuid.uuid4()),
-                "name": "أ. أحمد محمود علي",
-                "national_id": "28511251234567",
-                "phone": "01123456789",
-                "code": "TCH-101",
-                "qualification": "ليسانس لغة عربية",
-                "qual_year": "2010",
-                "weekly_sessions": 18,
-                "session_price": 60
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "name": "م. سارة إبراهيم",
-                "national_id": "29005051234567",
-                "phone": "01287654321",
-                "code": "TCH-102",
-                "qualification": "بكالوريوس هندسة صناعية",
-                "qual_year": "2015",
-                "weekly_sessions": 24,
-                "session_price": 75
-            }
-        ]
-        # بيانات الطلاب الافتراضية
-        st.session_state.students = [
-            {
-                "id": str(uuid.uuid4()),
-                "name": "عمر خالد محمد",
-                "code": "STU-2024-001",
-                "national_id": "30801011234567",
-                "phones": ["01098765432", "01112345678"],
-                "parent_phones": ["01000011122"],
-                "father_job": "مهندس",
-                "class_name": "الصف الأول - تدريب مزدوج"
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "name": "يوسف أحمد سمير",
-                "code": "STU-2024-002",
-                "national_id": "30805051234568",
-                "phones": ["01234567890"],
-                "parent_phones": ["01000011133", "01100022244"],
-                "father_job": "تاجر",
-                "class_name": "الصف الثاني - نانو تكنولوجي"
-            },
-            {
-                "id": str(uuid.uuid4()),
-                "name": "مريم عبد الله",
-                "code": "STU-2024-003",
-                "national_id": "30901011234569",
-                "phones": ["01011112222"],
-                "parent_phones": ["01022223333"],
-                "father_job": "موظف",
-                "class_name": "الصف الأول - تدريب مزدوج"
-            }
-        ]
-        # الحضور والغياب - بيانات تجريبية
-        today_str = str(date.today())
-        st.session_state.attendance = {} # {date: {student_id: {status, penalty, notes}}}
-        for student in st.session_state.students:
-            if today_str not in st.session_state.attendance:
-                st.session_state.attendance[today_str] = {}
-            # بيانات تجريبية متنوعة
-            st.session_state.attendance[today_str][student['id']] = {
-                "status": "حاضر",
-                "penalty": "",
-                "notes": ""
-            }
 
-        # حساب معلم افتراضي للتجربة
-        st.session_state.users["teacher1"] = {"password": "123456", "role": "teacher", "active": True, "teacher_code": "TCH-101"}
+# ==========================================================
+# الدوال المساعدة
+# ==========================================================
+def split_phones(text: str):
+    """تقسيم الأرقام المدخلة إلى قائمة، مع دعم الفاصلة العربية والإنجليزية."""
+    if not text:
+        return []
+    parts = re.split(r"[,،;/\n]+", text)
+    return [p.strip() for p in parts if p.strip()]
 
-        st.session_state.logged_in = False
-        st.session_state.current_user = None
-        st.session_state.current_role = None
-        st.session_state.initialized = True
 
-init_session_state()
+def build_attendance(seed: int, days: int = 14):
+    """توليد سجل حضور تجريبي لآخر عدد من الأيام (باستثناء أيام الجمعة)."""
+    rnd = random.Random(seed * 7919 + 13)
+    result = {}
+    today = date.today()
+    for i in range(days):
+        d = today - timedelta(days=i)
+        if d.weekday() == 4:  # الجمعة
+            continue
+        result[d.isoformat()] = rnd.choices(
+            ["حاضر", "غائب", "متأخر"], weights=[78, 12, 10]
+        )[0]
+    return result
 
-# ================== 3. دوال مساعدة ==================
-def calculate_attendance_summary(student_id):
-    total_present = 0
-    total_absent = 0
-    total_late = 0
-    penalties = []
-    notes_list = []
-    for day, records in st.session_state.attendance.items():
-        if student_id in records:
-            rec = records[student_id]
-            if rec['status'] == 'حاضر':
-                total_present += 1
-            elif rec['status'] == 'غائب':
-                total_absent += 1
-            elif rec['status'] == 'متأخر':
-                total_late += 1
-            if rec['penalty']:
-                penalties.append(f"{day}: {rec['penalty']}")
-            if rec['notes']:
-                notes_list.append(f"{day}: {rec['notes']}")
-    return total_present, total_absent, total_late, penalties, notes_list
 
-def get_teacher_by_code(code):
+def attendance_totals(student):
+    """إرجاع (أيام الحضور، أيام الغياب، أيام التأخير)."""
+    att = student.get("attendance", {})
+    present = sum(1 for v in att.values() if v == "حاضر")
+    absent = sum(1 for v in att.values() if v == "غائب")
+    late = sum(1 for v in att.values() if v == "متأخر")
+    return present, absent, late
+
+
+def find_teacher_by_credentials(username, password):
     for t in st.session_state.teachers:
-        if t['code'] == code:
+        if (
+            t.get("username")
+            and t.get("password")
+            and t["username"] == username
+            and t["password"] == password
+        ):
             return t
     return None
 
-# ================== 4. شاشة تسجيل الدخول المؤمنة ==================
-def login_page():
-    st.markdown('<div class="login-card">', unsafe_allow_html=True)
-    st.markdown("<h1>🏫 مدرسة التوكل جيلا</h1><h3>مدرسة نانوي صناعي - تدريب مزدوج</h3><p>نظام إدارة المدرسة المتكامل</p>", unsafe_allow_html=True)
 
-    with st.form("login_form"):
-        username = st.text_input("اسم المستخدم", placeholder="ادخل اسم المستخدم")
-        password = st.text_input("كلمة المرور", type="password", placeholder="ادخل كلمة المرور")
-        submitted = st.form_submit_button("تسجيل الدخول", use_container_width=True, type="primary")
+# ==========================================================
+# تهيئة البيانات الافتراضية داخل session_state
+# ==========================================================
+def init_data():
+    if st.session_state.get("_initialized"):
+        return
+    st.session_state._initialized = True
+
+    # ---------- حالة الدخول ----------
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.session_state.display_name = ""
+    st.session_state.role = ""
+    st.session_state.current_teacher_id = None
+
+    # ---------- بيانات مدير المدرسة ----------
+    st.session_state.manager = {
+        "name": "أ. عبد الرحمن محمد التوكل",
+        "national_id": "28001011234567",
+        "phone": "01001234567",
+        "code": "MGR-001",
+        "qualification": "بكالوريوس هندسة صناعية - قسم ميكانيكا",
+        "grad_year": "2004",
+    }
+
+    # ---------- بيانات الطلاب ----------
+    students_seed = [
+        {
+            "name": "أحمد محمود السيد",
+            "code": "STD-001",
+            "national_id": "30101011234567",
+            "phones": ["01011112222", "01011113333"],
+            "parent_phones": ["01211112222", "01211113333"],
+            "father_job": "نجار",
+        },
+        {
+            "name": "مريم خالد عبد الله",
+            "code": "STD-002",
+            "national_id": "30201021234567",
+            "phones": ["01022223333"],
+            "parent_phones": ["01222223333"],
+            "father_job": "مدرسة لغة عربية",
+        },
+        {
+            "name": "يوسف إبراهيم حسن",
+            "code": "STD-003",
+            "national_id": "30101031234567",
+            "phones": ["01033334444", "01133334444"],
+            "parent_phones": ["01233334444"],
+            "father_job": "حداد",
+        },
+        {
+            "name": "سلمى أحمد فتحي",
+            "code": "STD-004",
+            "national_id": "30201041234567",
+            "phones": ["01044445555"],
+            "parent_phones": ["01244445555", "01544445555"],
+            "father_job": "تاجر",
+        },
+        {
+            "name": "عمر سامي رشاد",
+            "code": "STD-005",
+            "national_id": "30101051234567",
+            "phones": ["01055556666"],
+            "parent_phones": ["01255556666"],
+            "father_job": "كهربائي",
+        },
+        {
+            "name": "نور الهدى مصطفى",
+            "code": "STD-006",
+            "national_id": "30201061234567",
+            "phones": ["01066667777"],
+            "parent_phones": ["01266667777"],
+            "father_job": "محاسب",
+        },
+        {
+            "name": "محمد عادل شعبان",
+            "code": "STD-007",
+            "national_id": "30101071234567",
+            "phones": ["01077778888"],
+            "parent_phones": ["01277778888"],
+            "father_job": "سباك",
+        },
+        {
+            "name": "حبيبة وليد أنور",
+            "code": "STD-008",
+            "national_id": "30201081234567",
+            "phones": ["01088889999"],
+            "parent_phones": ["01288889999"],
+            "father_job": "صيدلي",
+        },
+    ]
+
+    students = []
+    for idx, s in enumerate(students_seed, start=1):
+        rec = dict(s)
+        rec["id"] = idx
+        rec["attendance"] = build_attendance(idx)
+        if idx % 3 == 0:
+            rec["penalties"] = [
+                {
+                    "date": (date.today() - timedelta(days=3)).isoformat(),
+                    "reason": "التأخر عن الطابور الصباحي",
+                }
+            ]
+        else:
+            rec["penalties"] = []
+        rec["notes"] = (
+            "طالب منتظم ومتفاعل في الحصص العملية."
+            if idx % 2 == 1
+            else "يحتاج متابعة إضافية في الجزء العملي بالورشة."
+        )
+        students.append(rec)
+
+    st.session_state.students = students
+
+    # ---------- بيانات المدرسين ----------
+    teachers_seed = [
+        {
+            "name": "أ. خالد سعيد رمضان",
+            "national_id": "28501011234567",
+            "phone": "01099887766",
+            "code": "TCH-001",
+            "qualification": "بكالوريوس تربية صناعية",
+            "grad_year": "2008",
+            "weekly_sessions": 18,
+            "session_price": 75.0,
+            "username": "khaled",
+            "password": "khaled123",
+            "active": True,
+        },
+        {
+            "name": "أ. منى عبد الحميد علي",
+            "national_id": "28702021234567",
+            "phone": "01088776655",
+            "code": "TCH-002",
+            "qualification": "بكالوريوس علوم - قسم رياضيات",
+            "grad_year": "2010",
+            "weekly_sessions": 22,
+            "session_price": 70.0,
+            "username": "mona",
+            "password": "mona123",
+            "active": True,
+        },
+        {
+            "name": "أ. مصطفى كامل الجندي",
+            "national_id": "28403031234567",
+            "phone": "01077665544",
+            "code": "TCH-003",
+            "qualification": "دبلوم فني صناعي متقدم",
+            "grad_year": "2006",
+            "weekly_sessions": 16,
+            "session_price": 85.0,
+            "username": "mostafa",
+            "password": "mostafa123",
+            "active": True,
+        },
+        {
+            "name": "أ. هدى إبراهيم شاكر",
+            "national_id": "28904041234567",
+            "phone": "01066554433",
+            "code": "TCH-004",
+            "qualification": "ليسانس آداب - قسم لغة إنجليزية",
+            "grad_year": "2012",
+            "weekly_sessions": 20,
+            "session_price": 65.0,
+            "username": "hoda",
+            "password": "hoda123",
+            "active": False,
+        },
+        {
+            "name": "أ. طارق ياسر عبد الفتاح",
+            "national_id": "28305051234567",
+            "phone": "01055443322",
+            "code": "TCH-005",
+            "qualification": "بكالوريوس هندسة ميكاترونكس",
+            "grad_year": "2007",
+            "weekly_sessions": 24,
+            "session_price": 90.0,
+            "username": "tarek",
+            "password": "tarek123",
+            "active": True,
+        },
+    ]
+
+    teachers = []
+    for idx, t in enumerate(teachers_seed, start=1):
+        rec = dict(t)
+        rec["id"] = idx
+        teachers.append(rec)
+
+    st.session_state.teachers = teachers
+
+
+# ==========================================================
+# شاشة تسجيل الدخول
+# ==========================================================
+def login_page():
+    st.markdown("<div style='height:40px'></div>", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 1.3, 1])
+    with c2:
+        st.markdown(
+            "<div class='login-box'>"
+            "<div class='app-title'>🏫 مدرسة التوكل جيلا</div>"
+            "<div class='app-sub'>مدرسة نانوي صناعي — نظام تدريب مزدوج</div>"
+            "<hr style='border:1px solid #dbe7ff'>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        with st.form("login_form", clear_on_submit=False):
+            username = st.text_input("👤 اسم المستخدم", placeholder="اكتب اسم المستخدم")
+            password = st.text_input(
+                "🔑 كلمة المرور", type="password", placeholder="اكتب كلمة المرور"
+            )
+            submitted = st.form_submit_button("🔓 تسجيل الدخول", use_container_width=True)
 
         if submitted:
-            if username in st.session_state.users:
-                user = st.session_state.users[username]
-                if not user['active']:
-                    st.error("هذا الحساب معطل، تواصل مع المدير")
-                elif user['password'] == password:
-                    st.session_state.logged_in = True
-                    st.session_state.current_user = username
-                    st.session_state.current_role = user['role']
-                    st.success("تم تسجيل الدخول بنجاح")
-                    st.rerun()
-                else:
-                    st.error("كلمة المرور غير صحيحة")
+            username = (username or "").strip()
+            password = (password or "").strip()
+
+            if not username or not password:
+                st.error("⚠️ من فضلك أدخل اسم المستخدم وكلمة المرور.")
+            elif username == "admin" and password == "admin123":
+                st.session_state.logged_in = True
+                st.session_state.username = "admin"
+                st.session_state.display_name = "مدير المدرسة"
+                st.session_state.role = "admin"
+                st.session_state.current_teacher_id = None
+                st.rerun()
             else:
-                st.error("اسم المستخدم غير موجود")
+                teacher = find_teacher_by_credentials(username, password)
+                if teacher is None:
+                    st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة.")
+                elif not teacher.get("active", True):
+                    st.error("⛔ هذا الحساب معطّل، برجاء التواصل مع مدير المدرسة.")
+                else:
+                    st.session_state.logged_in = True
+                    st.session_state.username = teacher["username"]
+                    st.session_state.display_name = teacher["name"]
+                    st.session_state.role = "teacher"
+                    st.session_state.current_teacher_id = teacher["id"]
+                    st.rerun()
 
-    st.info("الحساب الافتراضي للمدير: admin / admin123 | حساب معلم تجريبي: teacher1 / 123456")
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.caption("الحساب الافتراضي للمدير: admin / admin123")
 
-# ================== 5. لوحة التحكم الرئيسية ==================
-def main_app():
-    role = st.session_state.current_role
+
+# ==========================================================
+# صفحة: لوحة التحكم الرئيسية
+# ==========================================================
+def page_dashboard():
+    st.markdown("## 🏠 لوحة التحكم الرئيسية")
+    st.markdown("---")
+
+    students = st.session_state.students
+    teachers = st.session_state.teachers
+    today_str = date.today().isoformat()
+
+    present_today = sum(
+        1 for s in students if s["attendance"].get(today_str) == "حاضر"
+    )
+    absent_today = sum(
+        1 for s in students if s["attendance"].get(today_str) == "غائب"
+    )
+    late_today = sum(
+        1 for s in students if s["attendance"].get(today_str) == "متأخر"
+    )
+
+    total_monthly = sum(
+        t["weekly_sessions"] * 4 * t["session_price"] for t in teachers
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("👨‍🎓 عدد الطلاب", len(students))
+    c2.metric("👨‍🏫 عدد المدرسين", len(teachers))
+    c3.metric("✅ حضور اليوم", present_today)
+    c4.metric("❌ غياب اليوم", absent_today)
+
+    c5, c6, c7, c8 = st.columns(4)
+    c5.metric("⏰ تأخير اليوم", late_today)
+    c6.metric("🔐 حسابات معطلة", sum(1 for t in teachers if not t.get("active", True)))
+    c7.metric("📚 إجمالي الحصص الأسبوعية", sum(t["weekly_sessions"] for t in teachers))
+    c8.metric("💰 مستحقات الشهر", f"{total_monthly:,.0f} ج.م")
+
+    st.markdown("---")
+    st.markdown("### 📊 ملخص حضور الطلاب")
+
+    rows = []
+    for s in students:
+        p, a, l = attendance_totals(s)
+        rows.append(
+            {
+                "الكود": s["code"],
+                "اسم الطالب": s["name"],
+                "أيام الحضور": p,
+                "أيام الغياب": a,
+                "أيام التأخير": l,
+                "عدد الجزاءات": len(s["penalties"]),
+            }
+        )
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    st.markdown("### 👨‍🏫 ملخص المدرسين")
+    trows = []
+    for t in teachers:
+        trows.append(
+            {
+                "الكود": t["code"],
+                "اسم المدرس": t["name"],
+                "الحصص الأسبوعية": t["weekly_sessions"],
+                "حصص الشهر": t["weekly_sessions"] * 4,
+                "ثمن الحصة": f"{t['session_price']:,.0f} ج.م",
+                "المستحق الشهري": f"{t['weekly_sessions'] * 4 * t['session_price']:,.0f} ج.م",
+                "الحالة": "مفعّل ✅" if t.get("active", True) else "معطّل ⛔",
+            }
+        )
+    st.dataframe(pd.DataFrame(trows), use_container_width=True, hide_index=True)
+
+
+# ==========================================================
+# صفحة: بيانات مدير المدرسة
+# ==========================================================
+def page_manager():
+    st.markdown("## 👤 بيانات مدير المدرسة")
+    st.markdown("---")
+
+    m = st.session_state.manager
+
+    with st.form("manager_form"):
+        c1, c2 = st.columns(2)
+        name = c1.text_input("الاسم بالكامل", value=m["name"])
+        national_id = c2.text_input("الرقم القومي", value=m["national_id"])
+        phone = c1.text_input("رقم التليفون", value=m["phone"])
+        code = c2.text_input("الكود", value=m["code"])
+        qualification = c1.text_input("المؤهل الدراسي", value=m["qualification"])
+        grad_year = c2.text_input("سنة الحصول على المؤهل", value=m["grad_year"])
+
+        saved = st.form_submit_button("💾 حفظ بيانات المدير", use_container_width=True)
+
+    if saved:
+        st.session_state.manager = {
+            "name": name.strip(),
+            "national_id": national_id.strip(),
+            "phone": phone.strip(),
+            "code": code.strip(),
+            "qualification": qualification.strip(),
+            "grad_year": grad_year.strip(),
+        }
+        st.success("✅ تم حفظ بيانات مدير المدرسة بنجاح.")
+
+    st.markdown("---")
+    st.markdown("### 📇 بطاقة المدير الحالية")
+    mm = st.session_state.manager
+    st.markdown(
+        f"""
+        <div class='card'>
+        <b>الاسم:</b> {mm['name']}<br>
+        <b>الرقم القومي:</b> {mm['national_id']}<br>
+        <b>رقم التليفون:</b> {mm['phone']}<br>
+        <b>الكود:</b> {mm['code']}<br>
+        <b>المؤهل الدراسي:</b> {mm['qualification']}<br>
+        <b>سنة الحصول عليه:</b> {mm['grad_year']}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ==========================================================
+# صفحة: الطلاب
+# ==========================================================
+def page_students():
+    st.markdown("## 🎓 إدارة الطلاب")
+    st.markdown("---")
+
+    tab_list, tab_add, tab_profile = st.tabs(
+        ["📋 قائمة الطلاب", "➕ إضافة طالب جديد", "🗂️ الملف الشخصي للطالب"]
+    )
+
+    # ---------- قائمة الطلاب ----------
+    with tab_list:
+        students = st.session_state.students
+        if not students:
+            st.warning("لا يوجد طلاب مسجلون حتى الآن.")
+        else:
+            rows = []
+            for s in students:
+                p, a, l = attendance_totals(s)
+                rows.append(
+                    {
+                        "الكود": s["code"],
+                        "الاسم": s["name"],
+                        "الرقم القومي": s["national_id"],
+                        "تليفون الطالب": " / ".join(s["phones"]) if s["phones"] else "-",
+                        "تليفون ولي الأمر": " / ".join(s["parent_phones"])
+                        if s["parent_phones"]
+                        else "-",
+                        "مهنة الأب": s["father_job"],
+                        "الحضور": p,
+                        "الغياب": a,
+                        "التأخير": l,
+                        "الجزاءات": len(s["penalties"]),
+                    }
+                )
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+            st.markdown("### 🗑️ حذف طالب")
+            delete_options = {f"{s['name']} - {s['code']}": s["id"] for s in students}
+            sel_del = st.selectbox(
+                "اختر الطالب المراد حذفه", list(delete_options.keys()), key="del_student_sel"
+            )
+            if st.button("🗑️ حذف الطالب نهائياً", key="del_student_btn"):
+                sid = delete_options[sel_del]
+                st.session_state.students = [
+                    s for s in st.session_state.students if s["id"] != sid
+                ]
+                st.success("تم حذف الطالب بنجاح.")
+                st.rerun()
+
+    # ---------- إضافة طالب ----------
+    with tab_add:
+        with st.form("add_student_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            name = c1.text_input("اسم الطالب")
+            code = c2.text_input("الكود")
+            national_id = c1.text_input("الرقم القومي")
+            father_job = c2.text_input("مهنة الأب")
+            phones_txt = c1.text_input(
+                "أرقام تليفون الطالب (افصل بينها بفاصلة ,)",
+                placeholder="01011112222, 01011113333",
+            )
+            parent_phones_txt = c2.text_input(
+                "أرقام تليفون ولي الأمر (افصل بينها بفاصلة ,)",
+                placeholder="01211112222, 01211113333",
+            )
+            notes = st.text_area("ملاحظات", value="")
+
+            add_btn = st.form_submit_button("➕ إضافة الطالب", use_container_width=True)
+
+        if add_btn:
+            name = (name or "").strip()
+            code = (code or "").strip()
+            if not name or not code:
+                st.error("⚠️ اسم الطالب والكود مطلوبان.")
+            elif any(s["code"] == code for s in st.session_state.students):
+                st.error("⚠️ هذا الكود مستخدم بالفعل لطالب آخر.")
+            else:
+                new_id = (
+                    max([s["id"] for s in st.session_state.students], default=0) + 1
+                )
+                st.session_state.students.append(
+                    {
+                        "id": new_id,
+                        "name": name,
+                        "code": code,
+                        "national_id": (national_id or "").strip(),
+                        "phones": split_phones(phones_txt),
+                        "parent_phones": split_phones(parent_phones_txt),
+                        "father_job": (father_job or "").strip(),
+                        "attendance": {},
+                        "penalties": [],
+                        "notes": notes.strip(),
+                    }
+                )
+                st.success(f"✅ تمت إضافة الطالب {name} بنجاح.")
+
+    # ---------- الملف الشخصي ----------
+    with tab_profile:
+        students = st.session_state.students
+        if not students:
+            st.warning("لا يوجد طلاب مسجلون حتى الآن.")
+            return
+
+        options = {f"{s['name']} - {s['code']}": s["id"] for s in students}
+        sel = st.selectbox("اختر الطالب", list(options.keys()), key="profile_select")
+        sid = options[sel]
+        student = next((s for s in students if s["id"] == sid), None)
+
+        if student is None:
+            st.error("لم يتم العثور على الطالب.")
+            return
+
+        p, a, l = attendance_totals(student)
+
+        st.markdown("---")
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("✅ أيام الحضور", p)
+        m2.metric("❌ أيام الغياب", a)
+        m3.metric("⏰ أيام التأخير", l)
+        m4.metric("⚖️ عدد الجزاءات", len(student["penalties"]))
+
+        st.markdown("### 📌 البيانات الشخصية")
+        st.markdown(
+            f"""
+            <div class='card'>
+            <b>الاسم:</b> {student['name']}<br>
+            <b>الكود:</b> {student['code']}<br>
+            <b>الرقم القومي:</b> {student['national_id'] or '-'}<br>
+            <b>مهنة الأب:</b> {student['father_job'] or '-'}<br>
+            <b>أرقام تليفون الطالب:</b> {' / '.join(student['phones']) if student['phones'] else '-'}<br>
+            <b>أرقام تليفون ولي الأمر:</b> {' / '.join(student['parent_phones']) if student['parent_phones'] else '-'}<br>
+            <b>الملاحظات:</b> {student['notes'] or '-'}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### 🗓️ سجل الحضور والغياب")
+        if student["attendance"]:
+            att_rows = [
+                {"التاريخ": k, "الحالة": v}
+                for k, v in sorted(student["attendance"].items(), reverse=True)
+            ]
+            st.dataframe(
+                pd.DataFrame(att_rows), use_container_width=True, hide_index=True
+            )
+        else:
+            st.info("لا يوجد سجل حضور لهذا الطالب حتى الآن.")
+
+        st.markdown("### ⚖️ الجزاءات")
+        if student["penalties"]:
+            pen_rows = [
+                {"التاريخ": x.get("date", "-"), "السبب": x.get("reason", "-")}
+                for x in student["penalties"]
+            ]
+            st.dataframe(
+                pd.DataFrame(pen_rows), use_container_width=True, hide_index=True
+            )
+        else:
+            st.info("لا توجد جزاءات على هذا الطالب.")
+
+        with st.form("add_penalty_form", clear_on_submit=True):
+            c1, c2 = st.columns([2, 1])
+            reason = c1.text_input("سبب الجزاء")
+            pdate = c2.date_input("تاريخ الجزاء", value=date.today())
+            pen_btn = st.form_submit_button("➕ إضافة جزاء", use_container_width=True)
+
+        if pen_btn:
+            reason = (reason or "").strip()
+            if not reason:
+                st.error("⚠️ من فضلك اكتب سبب الجزاء.")
+            else:
+                student["penalties"].append(
+                    {"date": pdate.isoformat(), "reason": reason}
+                )
+                st.success("✅ تم إضافة الجزاء بنجاح.")
+                st.rerun()
+
+        st.markdown("### 📝 تعديل الملاحظات")
+        new_notes = st.text_area(
+            "الملاحظات", value=student.get("notes", ""), key=f"notes_{student['id']}"
+        )
+        if st.button("💾 حفظ الملاحظات", key=f"save_notes_{student['id']}"):
+            student["notes"] = new_notes.strip()
+            st.success("✅ تم حفظ الملاحظات.")
+
+
+# ==========================================================
+# صفحة: المدرسين
+# ==========================================================
+def page_teachers():
+    st.markdown("## 👨‍🏫 إدارة المدرسين")
+    st.markdown("---")
+
+    tab_list, tab_add = st.tabs(["📋 قائمة المدرسين", "➕ إضافة مدرس جديد"])
+
+    with tab_list:
+        teachers = st.session_state.teachers
+        if not teachers:
+            st.warning("لا يوجد مدرسون مسجلون حتى الآن.")
+        else:
+            rows = []
+            for t in teachers:
+                weekly = t["weekly_sessions"]
+                monthly = weekly * 4
+                due = monthly * t["session_price"]
+                rows.append(
+                    {
+                        "الكود": t["code"],
+                        "الاسم": t["name"],
+                        "الرقم القومي": t["national_id"],
+                        "التليفون": t["phone"],
+                        "المؤهل": t["qualification"],
+                        "سنة التخرج": t["grad_year"],
+                        "حصص/أسبوع": weekly,
+                        "ثمن الحصة": f"{t['session_price']:,.0f}",
+                        "حصص/شهر": monthly,
+                        "المستحق الشهري": f"{due:,.0f}",
+                        "الحالة": "مفعّل ✅" if t.get("active", True) else "معطّل ⛔",
+                    }
+                )
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+            st.markdown("### ✏️ تعديل بيانات مدرس")
+            edit_options = {f"{t['name']} - {t['code']}": t["id"] for t in teachers}
+            sel_edit = st.selectbox(
+                "اختر المدرس", list(edit_options.keys()), key="edit_teacher_sel"
+            )
+            tid = edit_options[sel_edit]
+            teacher = next((t for t in teachers if t["id"] == tid), None)
+
+            if teacher is not None:
+                with st.form("edit_teacher_form"):
+                    c1, c2 = st.columns(2)
+                    name = c1.text_input("الاسم", value=teacher["name"])
+                    national_id = c2.text_input(
+                        "الرقم القومي", value=teacher["national_id"]
+                    )
+                    phone = c1.text_input("رقم التليفون", value=teacher["phone"])
+                    code = c2.text_input("الكود", value=teacher["code"])
+                    qualification = c1.text_input(
+                        "المؤهل الدراسي", value=teacher["qualification"]
+                    )
+                    grad_year = c2.text_input(
+                        "سنة الحصول على المؤهل", value=teacher["grad_year"]
+                    )
+                    weekly_sessions = c1.number_input(
+                        "عدد الحصص الأسبوعية",
+                        min_value=0,
+                        max_value=200,
+                        value=int(teacher["weekly_sessions"]),
+                        step=1,
+                    )
+                    session_price = c2.number_input(
+                        "ثمن الحصة الواحدة",
+                        min_value=0.0,
+                        max_value=100000.0,
+                        value=float(teacher["session_price"]),
+                        step=5.0,
+                    )
+                    save_btn = st.form_submit_button(
+                        "💾 حفظ التعديلات", use_container_width=True
+                    )
+
+                if save_btn:
+                    teacher["name"] = name.strip()
+                    teacher["national_id"] = national_id.strip()
+                    teacher["phone"] = phone.strip()
+                    teacher["code"] = code.strip()
+                    teacher["qualification"] = qualification.strip()
+                    teacher["grad_year"] = grad_year.strip()
+                    teacher["weekly_sessions"] = int(weekly_sessions)
+                    teacher["session_price"] = float(session_price)
+                    st.success("✅ تم حفظ تعديلات المدرس بنجاح.")
+
+    with tab_add:
+        with st.form("add_teacher_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            name = c1.text_input("اسم المدرس")
+            national_id = c2.text_input("الرقم القومي")
+            phone = c1.text_input("رقم التليفون")
+            code = c2.text_input("الكود")
+            qualification = c1.text_input("المؤهل الدراسي")
+            grad_year = c2.text_input("سنة الحصول على المؤهل")
+            weekly_sessions = c1.number_input(
+                "عدد الحصص الأسبوعية", min_value=0, max_value=200, value=12, step=1
+            )
+            session_price = c2.number_input(
+                "ثمن الحصة الواحدة", min_value=0.0, max_value=100000.0, value=70.0, step=5.0
+            )
+            add_btn = st.form_submit_button("➕ إضافة المدرس", use_container_width=True)
+
+        if add_btn:
+            name = (name or "").strip()
+            code = (code or "").strip()
+            if not name or not code:
+                st.error("⚠️ اسم المدرس والكود مطلوبان.")
+            elif any(t["code"] == code for t in st.session_state.teachers):
+                st.error("⚠️ هذا الكود مستخدم بالفعل لمدرس آخر.")
+            else:
+                new_id = (
+                    max([t["id"] for t in st.session_state.teachers], default=0) + 1
+                )
+                st.session_state.teachers.append(
+                    {
+                        "id": new_id,
+                        "name": name,
+                        "national_id": (national_id or "").strip(),
+                        "phone": (phone or "").strip(),
+                        "code": code,
+                        "qualification": (qualification or "").strip(),
+                        "grad_year": (grad_year or "").strip(),
+                        "weekly_sessions": int(weekly_sessions),
+                        "session_price": float(session_price),
+                        "username": "",
+                        "password": "",
+                        "active": True,
+                    }
+                )
+                st.success(f"✅ تمت إضافة المدرس {name} بنجاح.")
+
+
+# ==========================================================
+# صفحة: الحضور والغياب
+# ==========================================================
+def page_attendance():
+    st.markdown("## ✅ الحضور والغياب اليومي")
+    st.markdown("---")
+
+    students = st.session_state.students
+    if not students:
+        st.warning("لا يوجد طلاب مسجلون حتى الآن.")
+        return
+
+    c1, c2 = st.columns([1, 2])
+    selected_date = c1.date_input("📅 اختر التاريخ", value=date.today())
+    dstr = selected_date.isoformat()
+    c2.markdown(
+        f"<div class='card' style='margin-top:26px'>"
+        f"جارٍ تسجيل حضور يوم: <b>{dstr}</b></div>",
+        unsafe_allow_html=True,
+    )
+
+    df = pd.DataFrame(
+        [
+            {
+                "الكود": s["code"],
+                "الطالب": s["name"],
+                "الحالة": s["attendance"].get(dstr, "حاضر"),
+            }
+            for s in students
+        ]
+    )
+
+    edited = st.data_editor(
+        df,
+        key=f"att_editor_{dstr}",
+        hide_index=True,
+        use_container_width=True,
+        disabled=["الكود", "الطالب"],
+        column_config={
+            "الحالة": st.column_config.SelectboxColumn(
+                "الحالة",
+                help="اختر حالة الطالب",
+                options=["حاضر", "غائب", "متأخر"],
+                required=True,
+            )
+        },
+    )
+
+    if st.button("💾 حفظ سجل الحضور", type="primary", use_container_width=True):
+        by_code = {s["code"]: s for s in students}
+        for _, row in edited.iterrows():
+            code = row["الكود"]
+            if code in by_code:
+                by_code[code]["attendance"][dstr] = row["الحالة"]
+        st.success(f"✅ تم حفظ سجل حضور يوم {dstr} بنجاح.")
+
+    st.markdown("---")
+    st.markdown("### 📊 ملخص الحضور التراكمي")
+
+    rows = []
+    for s in students:
+        p, a, l = attendance_totals(s)
+        rows.append(
+            {
+                "الكود": s["code"],
+                "الطالب": s["name"],
+                "أيام الحضور": p,
+                "أيام الغياب": a,
+                "أيام التأخير": l,
+                "عدد الجزاءات": len(s["penalties"]),
+                "ملاحظات": s.get("notes", ""),
+            }
+        )
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+# ==========================================================
+# صفحة: المستحقات المالية
+# ==========================================================
+def page_finance():
+    st.markdown("## 💰 المستحقات المالية للمدرسين")
+    st.markdown("---")
+
+    teachers = st.session_state.teachers
+    if not teachers:
+        st.warning("لا يوجد مدرسون مسجلون حتى الآن.")
+        return
+
+    rows = []
+    total_weekly = 0
+    total_monthly = 0
+    total_due = 0.0
+
+    for t in teachers:
+        weekly = int(t["weekly_sessions"])
+        monthly = weekly * 4
+        price = float(t["session_price"])
+        due = monthly * price
+
+        total_weekly += weekly
+        total_monthly += monthly
+        total_due += due
+
+        rows.append(
+            {
+                "الكود": t["code"],
+                "اسم المدرس": t["name"],
+                "الحصص الأسبوعية": weekly,
+                "الحصص الشهرية": monthly,
+                "ثمن الحصة": f"{price:,.2f} ج.م",
+                "المستحق الشهري": f"{due:,.2f} ج.م",
+            }
+        )
+
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    c1, c2, c3 = st.columns(3)
+    c1.metric("📚 إجمالي الحصص الأسبوعية", total_weekly)
+    c2.metric("🗓️ إجمالي الحصص الشهرية", total_monthly)
+    c3.metric("💵 إجمالي المستحقات الشهرية", f"{total_due:,.2f} ج.م")
+
+    st.caption(
+        "المعادلة المستخدمة: (عدد الحصص الأسبوعية × 4 أسابيع) × ثمن الحصة الواحدة."
+    )
+
+
+# ==========================================================
+# صفحة: إدارة حسابات المعلمين
+# ==========================================================
+def page_accounts():
+    st.markdown("## 🔐 إدارة حسابات المعلمين")
+    st.markdown("---")
+    st.info(
+        "يمكنك من هنا إنشاء اسم مستخدم وكلمة مرور لكل مدرس، وكذلك تعطيل أو تفعيل حسابه في أي وقت."
+    )
+
+    teachers = st.session_state.teachers
+    if not teachers:
+        st.warning("لا يوجد مدرسون مسجلون حتى الآن.")
+        return
+
+    for t in teachers:
+        status_text = "مفعّل ✅" if t.get("active", True) else "معطّل ⛔"
+        with st.expander(f"👨‍🏫 {t['name']} — {t['code']} — الحالة: {status_text}"):
+            c1, c2 = st.columns(2)
+            new_user = c1.text_input(
+                "اسم المستخدم", value=t.get("username", ""), key=f"acc_user_{t['id']}"
+            )
+            new_pass = c2.text_input(
+                "كلمة المرور", value=t.get("password", ""), key=f"acc_pass_{t['id']}"
+            )
+
+            b1, b2 = st.columns(2)
+            if b1.button("💾 حفظ بيانات الدخول", key=f"acc_save_{t['id']}"):
+                new_user = (new_user or "").strip()
+                new_pass = (new_pass or "").strip()
+                if not new_user or not new_pass:
+                    st.error("⚠️ اسم المستخدم وكلمة المرور مطلوبان.")
+                else:
+                    duplicate = any(
+                        other["id"] != t["id"]
+                        and other.get("username") == new_user
+                        for other in st.session_state.teachers
+                    )
+                    if duplicate or new_user == "admin":
+                        st.error("⚠️ اسم المستخدم هذا مستخدم بالفعل.")
+                    else:
+                        t["username"] = new_user
+                        t["password"] = new_pass
+                        st.success("✅ تم حفظ بيانات الدخول بنجاح.")
+                        st.rerun()
+
+            toggle_label = (
+                "⛔ تعطيل الحساب" if t.get("active", True) else "✅ إعادة تفعيل الحساب"
+            )
+            if b2.button(toggle_label, key=f"acc_toggle_{t['id']}"):
+                t["active"] = not t.get("active", True)
+                st.rerun()
+
+            st.caption(
+                f"الحالة الحالية: {status_text} — "
+                f"اسم المستخدم: {t.get('username') or 'لم يتم إنشاؤه بعد'}"
+            )
+
+
+# ==========================================================
+# البرنامج الرئيسي
+# ==========================================================
+def main():
+    init_data()
+
+    if not st.session_state.get("logged_in"):
+        login_page()
+        return
+
+    role = st.session_state.get("role", "")
 
     with st.sidebar:
-        st.markdown(f"### مرحباً، {st.session_state.current_user}")
-        st.markdown(f"**الصلاحية:** {'مدير النظام' if role == 'admin' else 'معلم'}")
-        st.divider()
+        st.markdown(
+            f"<div style='text-align:right'>"
+            f"<h3 style='color:#0d6efd;margin-bottom:2px'>🏫 التوكل جيلا</h3>"
+            f"<small>مدرسة نانوي صناعي — تدريب مزدوج</small>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("---")
+        st.markdown(
+            f"**👋 مرحباً:** {st.session_state.get('display_name', '')}"
+        )
+        st.markdown(
+            f"**🔑 الصلاحية:** {'مدير المدرسة' if role == 'admin' else 'معلم'}"
+        )
+        st.markdown("---")
 
-        if role == 'admin':
-            menu = st.radio("القائمة الرئيسية",
-                ["الرئيسية", "بيانات مدير المدرسة", "إدارة الطلاب", "إدارة المدرسين", "الحضور والغياب", "الحسابات المالية", "إدارة حسابات المعلمين"],
-                label_visibility="collapsed")
+        if role == "admin":
+            pages = [
+                "🏠 لوحة التحكم",
+                "👤 بيانات مدير المدرسة",
+                "🎓 الطلاب",
+                "👨‍🏫 المدرسين",
+                "✅ الحضور والغياب",
+                "💰 المستحقات المالية",
+                "🔐 حسابات المعلمين",
+            ]
         else:
-            menu = st.radio("القائمة الرئيسية", ["الحضور والغياب"], label_visibility="collapsed")
+            pages = ["✅ الحضور والغياب"]
 
-        st.divider()
-        if st.button("تسجيل خروج", use_container_width=True):
+        choice = st.radio("القائمة الرئيسية", pages, label_visibility="collapsed")
+
+        st.markdown("---")
+        if st.button("🚪 تسجيل الخروج", use_container_width=True):
             st.session_state.logged_in = False
-            st.session_state.current_user = None
-            st.session_state.current_role = None
+            st.session_state.username = ""
+            st.session_state.display_name = ""
+            st.session_state.role = ""
+            st.session_state.current_teacher_id = None
             st.rerun()
 
-    # ----- الصفحات -----
-    if menu == "الرئيسية":
-        st.title("لوحة تحكم مدرسة التوكل جيلا")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("إجمالي الطلاب", len(st.session_state.students))
-        c2.metric("إجمالي المدرسين", len(st.session_state.teachers))
-        c3.metric("أيام تسجيل الحضور", len(st.session_state.attendance))
-        st.markdown("---")
-        st.subheader("نظرة سريعة على الطلاب")
-        df = pd.DataFrame(st.session_state.students)[["name", "code", "class_name"]]
-        df.columns = ["اسم الطالب", "الكود", "الفصل"]
-        st.dataframe(df, use_container_width=True, hide_index=True)
+    # ---------- توجيه الصفحات ----------
+    if role == "teacher":
+        page_attendance()
+        return
 
-    elif menu == "بيانات مدير المدرسة":
-        st.title("بيانات مدير المدرسة")
-        d = st.session_state.director
-        with st.form("director_form"):
-            col1, col2 = st.columns(2)
-            name = col1.text_input("الاسم", value=d['name'])
-            national_id = col2.text_input("الرقم القومي", value=d['national_id'])
-            phone = col1.text_input("رقم التليفون", value=d['phone'])
-            code = col2.text_input("الكود", value=d['code'])
-            qualification = col1.text_input("المؤهل الدراسي", value=d['qualification'])
-            qual_year = col2.text_input("سنة الحصول عليه", value=d['qual_year'])
-            if st.form_submit_button("حفظ التعديلات", type="primary"):
-                st.session_state.director.update({
-                    "name": name, "national_id": national_id, "phone": phone,
-                    "code": code, "qualification": qualification, "qual_year": qual_year
-                })
-                st.success("تم حفظ بيانات المدير")
+    if choice == "🏠 لوحة التحكم":
+        page_dashboard()
+    elif choice == "👤 بيانات مدير المدرسة":
+        page_manager()
+    elif choice == "🎓 الطلاب":
+        page_students()
+    elif choice == "👨‍🏫 المدرسين":
+        page_teachers()
+    elif choice == "✅ الحضور والغياب":
+        page_attendance()
+    elif choice == "💰 المستحقات المالية":
+        page_finance()
+    elif choice == "🔐 حسابات المعلمين":
+        page_accounts()
+    else:
+        page_dashboard()
 
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.write(f"**الاسم:** {d['name']} | **الكود:** {d['code']} | **المؤهل:** {d['qualification']} {d['qual_year']}")
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    elif menu == "إدارة الطلاب":
-        st.title("إدارة الطلاب")
-        tab1, tab2 = st.tabs(["قائمة الطلاب والملف الشخصي", "إضافة طالب جديد"])
-
-        with tab1:
-            if not st.session_state.students:
-                st.warning("لا يوجد طلاب")
-            else:
-                student_options = {f"{s['name']} - {s['code']}": s['id'] for s in st.session_state.students}
-                selected_label = st.selectbox("اختر الطالب لعرض ملفه الشخصي", list(student_options.keys()))
-                selected_id = student_options[selected_label]
-                student = next(s for s in st.session_state.students if s['id'] == selected_id)
-
-                present, absent, late, penalties, notes_list = calculate_attendance_summary(selected_id)
-
-                st.markdown('<div class="card">', unsafe_allow_html=True)
-                st.subheader(f"الملف الشخصي للطالب: {student['name']}")
-                c1, c2 = st.columns(2)
-                c1.write(f"**الكود:** {student['code']}")
-                c1.write(f"**الرقم القومي:** {student['national_id']}")
-                c1.write(f"**الفصل:** {student['class_name']}")
-                c1.write(f"**مهنة الأب:** {student['father_job']}")
-                c2.write(f"**أرقام الطالب:** {', '.join(student['phones'])}")
-                c2.write(f"**أرقام ولي الأمر:** {', '.join(student['parent_phones'])}")
-
-                st.divider()
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("أيام الحضور", present)
-                m2.metric("أيام الغياب", absent)
-                m3.metric("مرات التأخر", late)
-                m4.metric("إجمالي الجزاءات", len(penalties))
-
-                if penalties:
-                    st.warning("الجزاءات: " + " | ".join(penalties))
-                if notes_list:
-                    st.info("الملاحظات: " + " | ".join(notes_list))
-                st.markdown('</div>', unsafe_allow_html=True)
-
-        with tab2:
-            with st.form("add_student"):
-                st.subheader("بيانات الطالب الجديد")
-                c1, c2 = st.columns(2)
-                name = c1.text_input("الاسم *")
-                code = c2.text_input("الكود *")
-                national_id = c1.text_input("الرقم القومي *")
-                father_job = c2.text_input("مهنة الأب")
-                class_name = c1.text_input("الفصل / التخصص", value="الصف الأول - تدريب مزدوج")
-                phones_raw = c2.text_area("أرقام تليفون الطالب (افصل بفاصلة,)", placeholder="010..., 011...")
-                parent_phones_raw = st.text_area("أرقام تليفون ولي الأمر (افصل بفاصلة,)")
-                if st.form_submit_button("إضافة الطالب", type="primary"):
-                    if name and code and national_id:
-                        new_student = {
-                            "id": str(uuid.uuid4()),
-                            "name": name,
-                            "code": code,
-                            "national_id": national_id,
-                            "phones": [p.strip() for p in phones_raw.split(",") if p.strip()],
-                            "parent_phones": [p.strip() for p in parent_phones_raw.split(",") if p.strip()],
-                            "father_job": father_job,
-                            "class_name": class_name
-                        }
-                        st.session_state.students.append(new_student)
-                        st.success(f"تمت إضافة الطالب {name}")
-                    else:
-                        st.error("الحقول المميزة بـ * مطلوبة")
-
-    elif menu == "إدارة المدرسين":
-        st.title("إدارة المدرسين")
-        tab1, tab2 = st.tabs(["قائمة المدرسين", "إضافة مدرس جديد"])
-        with tab1:
-            df = pd.DataFrame(st.session_state.teachers)
-            if not df.empty:
-                df_display = df[["name", "code", "phone", "qualification", "weekly_sessions", "session_price"]].copy()
-                df_display.columns = ["الاسم", "الكود", "التليفون", "المؤهل", "حصص/أسبوع", "سعر الحصة"]
-                st.dataframe(df_display, use_container_width=True, hide_index=True)
-            else:
-                st.info("لا يوجد مدرسين")
-
-        with tab2:
-            with st.form("add_teacher"):
-                c1, c2 = st.columns(2)
-                name = c1.text_input("الاسم *")
-                code = c2.text_input("الكود *")
-                national_id = c1.text_input("الرقم القومي *")
-                phone = c2.text_input("رقم التليفون *")
-                qualification = c1.text_input("المؤهل الدراسي")
-                qual_year = c2.text_input("سنة المؤهل")
-                weekly = c1.number_input("عدد الحصص الأسبوعية", min_value=0, value=12)
-                price = c2.number_input("ثمن الحصة الواحدة (جنيه)", min_value=0, value=50)
-                if st.form_submit_button("إضافة المدرس", type="primary"):
-                    if name and code and national_id and phone:
-                        st.session_state.teachers.append({
-                            "id": str(uuid.uuid4()),
-                            "name": name, "national_id": national_id, "phone": phone,
-                            "code": code, "qualification": qualification, "qual_year": qual_year,
-                            "weekly_sessions": weekly, "session_price": price
-                        })
-                        st.success(f"تمت إضافة المدرس {name}")
-                    else:
-                        st.error("أكمل الحقول المطلوبة")
-
-    elif menu == "الحضور والغياب":
-        st.title("نظام الحضور والغياب اليومي والجزاءات")
-        selected_date = st.date_input("اختر تاريخ اليوم", value=date.today())
-        date_str = str(selected_date)
-
-        if date_str not in st.session_state.attendance:
-            st.session_state.attendance[date_str] = {}
-
-        st.subheader(f"تسجيل حضور يوم: {date_str}")
-
-        # جدول تسجيل سريع
-        for student in st.session_state.students:
-            sid = student['id']
-            existing = st.session_state.attendance[date_str].get(sid, {"status": "حاضر", "penalty": "", "notes": ""})
-
-            with st.container(border=True):
-                c1, c2, c3, c4 = st.columns([2, 1.5, 1.5, 2])
-                c1.write(f"**{student['name']}** ({student['code']})")
-                status = c2.selectbox(f"الحالة - {sid}", ["حاضر", "غائب", "متأخر"], index=["حاضر", "غائب", "متأخر"].index(existing['status']), key=f"st_{date_str}_{sid}", label_visibility="collapsed")
-                penalty = c3.text_input(f"الجزاء - {sid}", value=existing['penalty'], placeholder="جزاء", key=f"pe_{date_str}_{sid}", label_visibility="collapsed")
-                notes = c4.text_input(f"ملاحظات - {sid}", value=existing['notes'], placeholder="ملاحظات", key=f"no_{date_str}_{sid}", label_visibility="collapsed")
-
-                st.session_state.attendance[date_str][sid] = {"status": status, "penalty": penalty, "notes": notes}
-
-        st.success(f"تم حفظ حضور يوم {date_str} تلقائياً في الذاكرة المؤقتة")
-
-        st.divider()
-        st.subheader("التقرير التراكمي")
-        summary_data = []
-        for s in st.session_state.students:
-            p, a, l, pen, _ = calculate_attendance_summary(s['id'])
-            summary_data.append({"الطالب": s['name'], "الكود": s['code'], "حضور": p, "غياب": a, "تأخر": l, "جزاءات": len(pen)})
-        st.dataframe(pd.DataFrame(summary_data), use_container_width=True, hide_index=True)
-
-    elif menu == "الحسابات المالية":
-        st.title("الحسابات المالية التلقائية للمدرسين")
-        st.info("المعادلة: المستحقات الشهرية = إجمالي الحصص في الشهر × ثمن الحصة | الشهر = 4 أسابيع")
-
-        financial_data = []
-        for t in st.session_state.teachers:
-            weekly = t['weekly_sessions']
-            monthly_sessions = weekly * 4
-            monthly_due = monthly_sessions * t['session_price']
-            weekly_due = weekly * t['session_price']
-            financial_data.append({
-                "اسم المدرس": t['name'],
-                "الكود": t['code'],
-                "حصص/أسبوع": weekly,
-                "حصص/شهر": monthly_sessions,
-                "سعر الحصة": t['session_price'],
-                "مستحق أسبوعي": weekly_due,
-                "المستحقات الشهرية": monthly_due
-            })
-        st.dataframe(pd.DataFrame(financial_data), use_container_width=True, hide_index=True)
-
-        # كروت لكل مدرس
-        for row in financial_data:
-            st.markdown(f"""<div class="card">
-                <h4>{row['اسم المدرس']} - {row['الكود']}</h4>
-                <p>إجمالي حصص الأسبوع: {row['حصص/أسبوع']} | إجمالي حصص الشهر: {row['حصص/شهر']} | سعر الحصة: {row['سعر الحصة']} جنيه</p>
-                <h3 style="color:#1a73e8;">المستحق الشهري: {row['المستحقات الشهرية']} جنيه</h3>
-            </div>""", unsafe_allow_html=True)
-
-    elif menu == "إدارة حسابات المعلمين":
-        st.title("إدارة حسابات المعلمين - لوحة المدير")
-
-        tab1, tab2 = st.tabs(["إنشاء حساب معلم", "التحكم في الحسابات"])
-        with tab1:
-            teacher_codes = [t['code'] for t in st.session_state.teachers]
-            with st.form("create_teacher_account"):
-                st.subheader("توليد حساب جديد للمعلم")
-                selected_code = st.selectbox("اختر كود المدرس", teacher_codes)
-                username = st.text_input("اسم المستخدم الجديد للمعلم")
-                password = st.text_input("كلمة المرور", value="123456")
-                if st.form_submit_button("إنشاء الحساب", type="primary"):
-                    if username in st.session_state.users:
-                        st.error("اسم المستخدم موجود بالفعل")
-                    elif username and password and selected_code:
-                        st.session_state.users[username] = {"password": password, "role": "teacher", "active": True, "teacher_code": selected_code}
-                        st.success(f"تم إنشاء حساب للمعلم {selected_code} -> المستخدم: {username}")
-                    else:
-                        st.error("أكمل البيانات")
-
-        with tab2:
-            users_df = []
-            for uname, udata in st.session_state.users.items():
-                if udata['role'] == 'teacher':
-                    users_df.append({"اسم المستخدم": uname, "كود المدرس": udata['teacher_code'], "الحالة": "نشط" if udata['active'] else "محظور"})
-            st.dataframe(pd.DataFrame(users_df), use_container_width=True, hide_index=True)
-
-            st.subheader("تعطيل / تفعيل حساب")
-            teacher_usernames = [u for u, d in st.session_state.users.items() if d['role'] == 'teacher']
-            if teacher_usernames:
-                selected_user = st.selectbox("اختر حساب المعلم", teacher_usernames)
-                col1, col2 = st.columns(2)
-                if col1.button("حظر الحساب", use_container_width=True):
-                    st.session_state.users[selected_user]['active'] = False
-                    st.warning(f"تم حظر حساب {selected_user}")
-                    st.rerun()
-                if col2.button("إعادة تفعيل الحساب", type="primary", use_container_width=True):
-                    st.session_state.users[selected_user]['active'] = True
-                    st.success(f"تم تفعيل حساب {selected_user}")
-                    st.rerun()
-
-# ================== 6. نقطة التشغيل الرئيسية ==================
-if not st.session_state.logged_in:
-    login_page()
-else:
-    main_app()
+if __name__ == "__main__":
+    main()
