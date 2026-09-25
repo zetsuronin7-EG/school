@@ -424,7 +424,7 @@ def login_page():
         st.markdown(
             "<div class='login-box'>"
             "<div class='app-title'>🏫 مدرسة التوكل جيلا</div>"
-            "<div class='app-sub'>مدرسة نانوي صناعي — نظام تدريب مزدوج</div>"
+            "<div class='app-sub'>مدرسة ثانوي صناعي — نظام تدريب مزدوج</div>"
             "<hr style='border:1px solid #dbe7ff'>"
             "</div>",
             unsafe_allow_html=True,
@@ -1115,7 +1115,7 @@ def main():
         st.markdown(
             f"<div style='text-align:right'>"
             f"<h3 style='color:#0d6efd;margin-bottom:2px'>🏫 التوكل جيلا</h3>"
-            f"<small>مدرسة نانوي صناعي — تدريب مزدوج</small>"
+            f"<small>مدرسة ثانوي صناعي — تدريب مزدوج</small>"
             f"</div>",
             unsafe_allow_html=True,
         )
