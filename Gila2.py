@@ -464,7 +464,6 @@ def login_page():
                     st.session_state.current_teacher_id = teacher["id"]
                     st.rerun()
 
-        st.caption("الحساب الافتراضي للمدير: admin / admin123")
 
 
 # ==========================================================
