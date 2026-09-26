@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 نظام إدارة مدرسة التوكل جيلا
-الإصدار: 2.1.0
+الإصدار: 2.2.0
 """
 
 import hashlib
@@ -13,12 +13,11 @@ import pandas as pd
 import streamlit as st
 
 # ==========================================================
-# ثوابت عامة
+# ثوابت
 # ==========================================================
 APP_NAME = "التوكل جيلا"
 APP_TAGLINE = "نظام إدارة المدرسة"
-APP_VERSION = "1.1.0"
-APP_BUILD = "2026.09"
+APP_VERSION = "2.2.0"
 
 GRADES = ["الأول الصناعي", "الثاني الصناعي", "الثالث الصناعي"]
 SPECIALTIES = [
@@ -44,499 +43,762 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ==========================================================
-# الهوية البصرية (CSS)
-# ==========================================================
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
-    :root {
-        --bg: #f6f7fb;
-        --bg-elev: #ffffff;
-        --surface: #ffffff;
-        --surface-2: #f1f3f9;
-        --border: #e4e7ef;
-        --border-strong: #d4d8e3;
-        --text: #0f172a;
-        --text-2: #334155;
-        --muted: #64748b;
-        --faint: #94a3b8;
-        --primary: #4f46e5;
-        --primary-2: #6366f1;
-        --primary-soft: #eef2ff;
-        --accent: #0ea5e9;
-        --success: #16a34a;
-        --success-soft: #dcfce7;
-        --danger: #dc2626;
-        --danger-soft: #fee2e2;
-        --warning: #d97706;
-        --warning-soft: #fef3c7;
-        --sb-bg: #0b1220;
-        --sb-bg-2: #111a2e;
-        --sb-text: #e5e9f2;
-        --sb-muted: #94a3b8;
-        --sb-border: rgba(255,255,255,0.06);
-        --sb-hover: rgba(99,102,241,0.18);
-        --sb-active: rgba(99,102,241,0.28);
-        --shadow-sm: 0 1px 2px rgba(15,23,42,0.05);
-        --shadow: 0 4px 16px rgba(15,23,42,0.07);
-        --shadow-lg: 0 16px 40px rgba(15,23,42,0.12);
-        --r-sm: 8px;
-        --r: 12px;
-        --r-lg: 16px;
-        --r-xl: 20px;
-    }
+# ==========================================================
+# نظام الثيم (فاتح / داكن)
+# ==========================================================
+if "theme" not in st.session_state:
+    st.session_state.theme = "light"
 
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --bg: #0a0f1c;
-            --bg-elev: #111827;
-            --surface: #131c31;
-            --surface-2: #0f172a;
-            --border: #1f2b47;
-            --border-strong: #2a3a5f;
-            --text: #e8eefc;
-            --text-2: #c7d2e6;
-            --muted: #94a3b8;
-            --faint: #64748b;
-            --primary: #818cf8;
-            --primary-2: #a5b4fc;
-            --primary-soft: rgba(129,140,248,0.14);
-            --accent: #38bdf8;
+
+def build_css(theme: str) -> str:
+    """يبني CSS كاملاً حسب الوضع المختار."""
+    if theme == "dark":
+        tokens = """
+            --bg: #0b1020;
+            --bg-2: #070b16;
+            --surface: #121a2c;
+            --surface-2: #0e1524;
+            --surface-3: #182238;
+            --border: #223052;
+            --border-2: #2c3d63;
+            --text: #eef3ff;
+            --text-2: #c7d2e8;
+            --muted: #8695b8;
+            --faint: #5f6f92;
+            --primary: #7c8cff;
+            --primary-2: #99a6ff;
+            --primary-soft: rgba(124,140,255,0.16);
+            --primary-glow: rgba(124,140,255,0.35);
             --success: #4ade80;
             --success-soft: rgba(74,222,128,0.14);
             --danger: #f87171;
             --danger-soft: rgba(248,113,113,0.14);
             --warning: #fbbf24;
             --warning-soft: rgba(251,191,36,0.14);
-            --sb-bg: #060a15;
-            --sb-bg-2: #0a1224;
-            --sb-text: #e8eefc;
-            --sb-muted: #8394b4;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-            --shadow: 0 4px 16px rgba(0,0,0,0.4);
-            --shadow-lg: 0 16px 40px rgba(0,0,0,0.5);
-        }
-    }
+            --accent: #38bdf8;
+            --accent-soft: rgba(56,189,248,0.14);
+            --sb-bg: #060a16;
+            --sb-bg-2: #0a1024;
+            --sb-text: #e6ecfb;
+            --sb-muted: #8291b5;
+            --sb-border: rgba(255,255,255,0.07);
+            --sb-hover: rgba(124,140,255,0.14);
+            --sb-active: rgba(124,140,255,0.24);
+            --sb-active-bar: #7c8cff;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+            --shadow: 0 6px 20px rgba(0,0,0,0.45);
+            --shadow-lg: 0 18px 45px rgba(0,0,0,0.55);
+            --input-bg: #0e1524;
+            --input-border: #223052;
+        """
+    else:
+        tokens = """
+            --bg: #f6f8fc;
+            --bg-2: #eef2f9;
+            --surface: #ffffff;
+            --surface-2: #f5f7fb;
+            --surface-3: #eef2f9;
+            --border: #e2e7f0;
+            --border-2: #d0d7e5;
+            --text: #0f172a;
+            --text-2: #2c3851;
+            --muted: #64748b;
+            --faint: #94a3b8;
+            --primary: #4f46e5;
+            --primary-2: #6366f1;
+            --primary-soft: #eef2ff;
+            --primary-glow: rgba(79,70,229,0.22);
+            --success: #16a34a;
+            --success-soft: #dcfce7;
+            --danger: #dc2626;
+            --danger-soft: #fee2e2;
+            --warning: #d97706;
+            --warning-soft: #fef3c7;
+            --accent: #0ea5e9;
+            --accent-soft: #e0f2fe;
+            --sb-bg: #0a1024;
+            --sb-bg-2: #101b3a;
+            --sb-text: #eaf0fb;
+            --sb-muted: #98a5c2;
+            --sb-border: rgba(255,255,255,0.08);
+            --sb-hover: rgba(124,140,255,0.18);
+            --sb-active: rgba(124,140,255,0.3);
+            --sb-active-bar: #a5b4fc;
+            --shadow-sm: 0 1px 2px rgba(15,23,42,0.04);
+            --shadow: 0 6px 18px rgba(15,23,42,0.08);
+            --shadow-lg: 0 18px 45px rgba(15,23,42,0.14);
+            --input-bg: #ffffff;
+            --input-border: #d6deec;
+        """
 
-    html, body, [class*="css"], .stApp {
-        font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
-    }
+    return f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
-    /* ====== Root app ====== */
-    .stApp {
-        background: var(--bg) !important;
+    :root {{
+        {tokens}
+        --r-sm: 8px;
+        --r: 12px;
+        --r-lg: 16px;
+        --r-xl: 20px;
+        --fs-base: 15.5px;
+        --fs-lg: 17px;
+        --fs-xl: 20px;
+        --fs-2xl: 24px;
+    }}
+
+    /* ==========================================================
+       Base reset + typography
+    ========================================================== */
+    html, body, [class*="css"], .stApp, .stApp * {{
+        font-family: 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }}
+
+    html, body {{
+        font-size: var(--fs-base) !important;
         color: var(--text);
-    }
-    .stApp, .stApp * { box-sizing: border-box; }
+    }}
 
-    /* ====== Layout: sidebar on the RIGHT ====== */
-    div[data-testid="stAppViewContainer"] {
+    .stApp {{
+        background: var(--bg) !important;
+        color: var(--text) !important;
+    }}
+
+    p, span, div, label, li, td, th,
+    .stMarkdown, .stMarkdown p, .stText, .stCaption {{
+        color: var(--text-2);
+        font-size: var(--fs-base);
+        line-height: 1.7;
+    }}
+
+    h1, h2, h3, h4, h5, h6 {{
+        color: var(--text) !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.005em;
+        line-height: 1.35;
+    }}
+    h1 {{ font-size: 26px !important; font-weight: 900 !important; }}
+    h2 {{ font-size: 22px !important; }}
+    h3 {{ font-size: 18px !important; }}
+
+    /* Labels of widgets */
+    [data-testid="stWidgetLabel"] p,
+    label[data-baseweb="form-control-label"],
+    .stTextInput label p,
+    .stSelectbox label p,
+    .stNumberInput label p,
+    .stDateInput label p,
+    .stTextArea label p,
+    .stMultiSelect label p {{
+        color: var(--text) !important;
+        font-size: 14.5px !important;
+        font-weight: 700 !important;
+        margin-bottom: 6px !important;
+    }}
+
+    /* ==========================================================
+       Layout - sidebar on the RIGHT
+    ========================================================== */
+    [data-testid="stAppViewContainer"] {{
+        display: flex !important;
         flex-direction: row-reverse !important;
+        background: var(--bg) !important;
+    }}
+
+    [data-testid="stAppViewContainer"] > section.main,
+    [data-testid="stAppViewContainer"] > [data-testid="stMain"] {{
+        order: 2;
+        flex: 1 1 auto !important;
+        min-width: 0;
         background: var(--bg);
-    }
-    section[data-testid="stSidebar"] {
+    }}
+
+    section[data-testid="stSidebar"] {{
+        order: 1;
         background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-2) 100%) !important;
         border-left: 1px solid var(--sb-border) !important;
         border-right: none !important;
         direction: rtl !important;
         text-align: right !important;
-    }
-    section[data-testid="stSidebar"] * {
+        min-width: 280px !important;
+        max-width: 280px !important;
+    }}
+
+    section[data-testid="stSidebar"] * {{
         color: var(--sb-text) !important;
         direction: rtl !important;
         text-align: right !important;
-        font-family: 'Cairo', sans-serif !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
-    section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] div {
-        color: var(--sb-text) !important;
-    }
-    section[data-testid="stSidebar"] .stRadio > label:first-child { display: none !important; }
-    section[data-testid="stSidebar"] .stRadio [role="radiogroup"] {
+    }}
+
+    /* Hide default collapse button and recreate */
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] button,
+    section[data-testid="stSidebar"] button[kind="headerNoPadding"] {{
+        visibility: hidden !important;
+        display: none !important;
+    }}
+
+    /* Collapsed control - show on right side */
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarNavCollapseButton"] {{
+        position: fixed !important;
+        top: 14px !important;
+        right: 14px !important;
+        left: auto !important;
+        z-index: 9999 !important;
+    }}
+    [data-testid="stSidebarCollapsedControl"] svg,
+    [data-testid="stSidebarNavCollapseButton"] svg {{
+        color: var(--primary) !important;
+        fill: var(--primary) !important;
+    }}
+    [data-testid="stSidebarCollapsedControl"] button,
+    [data-testid="stSidebarNavCollapseButton"] button {{
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: var(--shadow) !important;
+        border-radius: 12px !important;
+        padding: 8px !important;
+    }}
+
+    /* Hide Streamlit chrome */
+    #MainMenu, footer, [data-testid="stToolbar"],
+    [data-testid="stDecoration"], [data-testid="stStatusWidget"] {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+    header[data-testid="stHeader"] {{
+        background: transparent !important;
+        height: 0 !important;
+    }}
+
+    .block-container {{
+        padding-top: 1.6rem !important;
+        padding-bottom: 2.5rem !important;
+        padding-inline: 2rem !important;
+        max-width: 1500px !important;
+    }}
+
+    /* ==========================================================
+       Sidebar content
+    ========================================================== */
+    .sb-brand {{
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 4px 16px 4px;
+        border-bottom: 1px solid var(--sb-border);
+        margin-bottom: 14px;
+    }}
+    .sb-brand .logo {{
+        width: 46px; height: 46px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6 60%, #ec4899);
+        color: #fff !important; font-size: 24px;
+        box-shadow: 0 8px 20px rgba(99,102,241,.4);
+        flex-shrink: 0;
+    }}
+    .sb-brand .name {{
+        font-weight: 900 !important; font-size: 17px !important;
+        color: var(--sb-text) !important; line-height: 1.15;
+    }}
+    .sb-brand .tag {{
+        font-size: 12px !important; color: var(--sb-muted) !important;
+        margin-top: 3px; font-weight: 600 !important;
+    }}
+
+    .sb-user {{
+        background: rgba(255,255,255,0.045);
+        border: 1px solid var(--sb-border);
+        border-radius: 14px;
+        padding: 14px 14px;
+        margin-bottom: 12px;
+    }}
+    .sb-user .n {{
+        font-weight: 800 !important; font-size: 15px !important;
+        color: var(--sb-text) !important; line-height: 1.3;
+    }}
+    .sb-user .r {{
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 11.5px !important;
+        color: #c7d2fe !important;
+        font-weight: 700 !important;
+        background: rgba(124,140,255,0.22);
+        padding: 3px 10px;
+        border-radius: 999px;
+    }}
+    .sb-user .e {{
+        font-size: 11.5px !important; color: var(--sb-muted) !important;
+        margin-top: 8px; direction: ltr; text-align: right; word-break: break-all;
+    }}
+
+    /* Nav radio list */
+    section[data-testid="stSidebar"] [role="radiogroup"] {{
         gap: 4px;
         display: flex;
         flex-direction: column;
-    }
-    section[data-testid="stSidebar"] .stRadio label {
+    }}
+    section[data-testid="stSidebar"] .stRadio > label:first-child {{ display: none !important; }}
+    section[data-testid="stSidebar"] .stRadio label {{
         display: flex !important;
         flex-direction: row-reverse !important;
         justify-content: flex-start !important;
         align-items: center;
         gap: 10px;
-        padding: 10px 14px !important;
+        padding: 11px 14px !important;
         margin: 0 !important;
-        border-radius: var(--r) !important;
-        transition: background .15s ease;
+        border-radius: 12px !important;
         font-weight: 600 !important;
-        font-size: 14px !important;
+        font-size: 14.5px !important;
         cursor: pointer;
         border: 1px solid transparent;
-    }
-    section[data-testid="stSidebar"] .stRadio label:hover {
-        background: var(--sb-hover) !important;
-        border-color: rgba(129,140,248,0.25);
-    }
-    section[data-testid="stSidebar"] .stRadio label p { font-size: 14px !important; font-weight: 600 !important; }
-    section[data-testid="stSidebar"] .stRadio label > div:first-child { display: none !important; }
-    section[data-testid="stSidebar"] .stRadio [aria-checked="true"] { background: var(--sb-active) !important; }
-
-    section[data-testid="stSidebar"] hr {
-        border: none; border-top: 1px solid var(--sb-border); margin: 12px 0;
-    }
-
-    /* ====== Header ====== */
-    header[data-testid="stHeader"] { background: transparent !important; }
-
-    /* ====== Typography ====== */
-    h1, h2, h3, h4, h5, h6 { color: var(--text) !important; font-weight: 800 !important; letter-spacing: -0.01em; }
-    p, span, div, label { color: var(--text); }
-    .stMarkdown p { color: var(--text-2); }
-    small, .stCaption, [data-testid="stCaptionContainer"] {
-        color: var(--muted) !important;
-    }
-
-    /* ====== Inputs ====== */
-    input, textarea, select,
-    .stTextInput input, .stNumberInput input, .stDateInput input,
-    .stTimeInput input, .stTextArea textarea {
-        direction: rtl !important;
-        text-align: right !important;
-        background: var(--surface) !important;
-        color: var(--text) !important;
-        border-color: var(--border) !important;
-        border-radius: var(--r) !important;
-    }
-    div[data-baseweb="input"], div[data-baseweb="textarea"],
-    div[data-baseweb="select"] > div {
-        direction: rtl !important;
-        text-align: right !important;
-        background: var(--surface) !important;
-        border-radius: var(--r) !important;
-        border-color: var(--border) !important;
-    }
-    div[data-baseweb="input"]:focus-within,
-    div[data-baseweb="textarea"]:focus-within,
-    div[data-baseweb="select"]:focus-within {
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 3px var(--primary-soft) !important;
-    }
-    div[data-baseweb="popover"] ul, div[data-baseweb="menu"] {
-        direction: rtl !important; text-align: right !important;
-        background: var(--surface) !important;
-        color: var(--text) !important;
-    }
-    label, .stMarkdown, .stText, .stCaption { text-align: right; }
-
-    /* ====== Buttons ====== */
-    .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
-        direction: rtl !important;
-        font-family: 'Cairo', sans-serif !important;
-        border-radius: var(--r) !important;
-        font-weight: 700 !important;
-        border: 1px solid var(--border-strong) !important;
-        background: var(--surface) !important;
-        color: var(--text) !important;
-        padding: 9px 18px !important;
         transition: all .15s ease;
-    }
-    .stButton > button:hover, .stFormSubmitButton > button:hover {
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-    }
-    .stButton > button[kind="primary"],
-    .stFormSubmitButton > button[kind="primary"] {
-        background: var(--primary) !important;
-        color: #ffffff !important;
-        border-color: var(--primary) !important;
-        box-shadow: 0 2px 8px rgba(79,70,229,0.28);
-    }
-    .stButton > button[kind="primary"]:hover,
-    .stFormSubmitButton > button[kind="primary"]:hover {
-        background: var(--primary-2) !important;
-        color: #fff !important;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(79,70,229,0.35);
-    }
-
-    /* ====== Metrics ====== */
-    [data-testid="stMetric"] {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--r-lg);
-        padding: 16px 18px;
-        box-shadow: var(--shadow-sm);
-    }
-    [data-testid="stMetricLabel"] p {
-        text-align: right !important;
-        color: var(--muted) !important;
+        color: var(--sb-text) !important;
+    }}
+    section[data-testid="stSidebar"] .stRadio label p {{
+        font-size: 14.5px !important;
         font-weight: 600 !important;
-        font-size: 13px !important;
-    }
-    [data-testid="stMetricValue"] {
-        text-align: right !important;
-        color: var(--text) !important;
-        font-weight: 900 !important;
-        font-size: 26px !important;
-    }
+        color: var(--sb-text) !important;
+    }}
+    section[data-testid="stSidebar"] .stRadio label:hover {{
+        background: var(--sb-hover) !important;
+        border-color: rgba(124,140,255,0.25);
+    }}
+    /* hide the radio dot itself */
+    section[data-testid="stSidebar"] .stRadio label > div:first-child {{
+        display: none !important;
+    }}
+    section[data-testid="stSidebar"] .stRadio label[data-checked="true"],
+    section[data-testid="stSidebar"] .stRadio label:has(input:checked) {{
+        background: var(--sb-active) !important;
+        border-color: rgba(124,140,255,0.4);
+    }}
 
-    /* ====== Tabs ====== */
-    .stTabs [data-baseweb="tab-list"] {
-        direction: rtl;
-        gap: 4px;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 0;
-    }
-    .stTabs [data-baseweb="tab"] {
-        font-family: 'Cairo', sans-serif !important;
-        font-weight: 700;
-        font-size: 14px;
-        padding: 10px 18px;
-        color: var(--muted) !important;
-        border-bottom: 2px solid transparent;
-        border-radius: 0;
-    }
-    .stTabs [aria-selected="true"] {
-        color: var(--primary) !important;
-        border-bottom-color: var(--primary) !important;
-    }
+    /* Sidebar hr */
+    section[data-testid="stSidebar"] hr {{
+        border: none; border-top: 1px solid var(--sb-border);
+        margin: 14px 0;
+    }}
 
-    /* ====== Expander ====== */
-    .streamlit-expanderHeader {
-        font-weight: 700 !important;
-        font-size: 14px !important;
-        background: var(--surface) !important;
-        border-radius: var(--r) !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text) !important;
-        padding: 10px 14px !important;
-    }
-    details[open] > summary.streamlit-expanderHeader { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
-    [data-testid="stExpander"] { border: none !important; }
-
-    /* ====== Alerts ====== */
-    .stAlert {
-        border-radius: var(--r) !important;
-        border: 1px solid var(--border) !important;
-        text-align: right;
-    }
-
-    /* ====== Dataframe ====== */
-    [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
-        direction: rtl;
-        border-radius: var(--r) !important;
-        overflow: hidden;
-        border: 1px solid var(--border) !important;
-    }
-
-    /* ====== Forms ====== */
-    [data-testid="stForm"] {
-        border: 1px solid var(--border) !important;
-        border-radius: var(--r-lg) !important;
-        padding: 20px !important;
-        background: var(--surface) !important;
-    }
-
-    /* ====== Custom utilities ====== */
-    .page-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin: 4px 0 20px 0;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
-    }
-    .page-head .titles { display: flex; flex-direction: column; gap: 2px; }
-    .page-head .title { font-size: 22px; font-weight: 900; color: var(--text); }
-    .page-head .sub { font-size: 13px; color: var(--muted); font-weight: 500; }
-    .page-head .badge {
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--primary);
-        background: var(--primary-soft);
-        padding: 4px 12px;
-        border-radius: 999px;
-        letter-spacing: .3px;
-    }
-
-    .section-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 15px;
-        font-weight: 800;
-        color: var(--text);
-        margin: 20px 0 10px 0;
-    }
-    .section-title::before {
-        content: '';
-        width: 4px; height: 18px;
-        border-radius: 2px;
-        background: var(--primary);
-    }
-
-    .stat {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--r-lg);
-        padding: 16px 18px;
-        box-shadow: var(--shadow-sm);
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        transition: transform .15s ease, box-shadow .15s ease;
-    }
-    .stat:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
-    .stat .icon {
-        width: 46px; height: 46px;
-        border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px;
-        background: var(--primary-soft);
-        color: var(--primary);
-        flex-shrink: 0;
-    }
-    .stat .icon.success { background: var(--success-soft); color: var(--success); }
-    .stat .icon.danger  { background: var(--danger-soft);  color: var(--danger); }
-    .stat .icon.warning { background: var(--warning-soft); color: var(--warning); }
-    .stat .icon.accent  { background: rgba(14,165,233,.12); color: var(--accent); }
-    .stat .val { font-size: 22px; font-weight: 900; color: var(--text); line-height: 1.1; }
-    .stat .lbl { font-size: 12.5px; color: var(--muted); font-weight: 600; margin-top: 2px; }
-
-    /* ====== Sidebar internal ====== */
-    .sb-brand {
-        display: flex; align-items: center; gap: 12px;
-        padding: 8px 4px 16px 4px;
-        border-bottom: 1px solid var(--sb-border);
-        margin-bottom: 12px;
-    }
-    .sb-brand .logo {
-        width: 44px; height: 44px;
-        border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, #6366f1, #8b5cf6);
-        color: #fff; font-size: 22px;
-        box-shadow: 0 6px 16px rgba(99,102,241,.4);
-        flex-shrink: 0;
-    }
-    .sb-brand .name { font-weight: 900; font-size: 16px; color: var(--sb-text); line-height: 1.1; }
-    .sb-brand .tag { font-size: 11px; color: var(--sb-muted); margin-top: 2px; }
-
-    .sb-user {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid var(--sb-border);
-        border-radius: var(--r);
-        padding: 12px 14px;
-        margin-bottom: 12px;
-    }
-    .sb-user .n { font-weight: 800; font-size: 14px; color: var(--sb-text); }
-    .sb-user .r { font-size: 11.5px; color: #a5b4fc; margin-top: 2px; font-weight: 600; }
-    .sb-user .e { font-size: 10.5px; color: var(--sb-muted); margin-top: 4px; direction: ltr; text-align: right; }
-
-    .sb-footer {
+    .sb-footer {{
         text-align: center;
-        font-size: 11px;
-        color: var(--sb-muted);
+        font-size: 11.5px !important;
+        color: var(--sb-muted) !important;
         padding: 12px 0 4px 0;
         border-top: 1px solid var(--sb-border);
         margin-top: 12px;
-        line-height: 1.6;
-    }
-    .sb-footer .ver {
+        line-height: 1.8;
+    }}
+    .sb-footer .ver {{
         display: inline-block;
-        padding: 2px 10px;
+        padding: 3px 12px;
         border-radius: 999px;
-        background: rgba(99,102,241,0.18);
-        color: #a5b4fc;
-        font-weight: 700;
-        font-size: 10.5px;
-        letter-spacing: .3px;
-    }
+        background: rgba(124,140,255,0.2);
+        color: #c7d2fe !important;
+        font-weight: 800 !important;
+        font-size: 11px !important;
+        letter-spacing: .5px;
+    }}
 
-    /* ====== Login ====== */
-    .login-shell {
-        max-width: 420px;
-        margin: 6vh auto 0 auto;
-        padding: 0;
-    }
-    .login-card {
+    /* ==========================================================
+       Inputs
+    ========================================================== */
+    input, textarea,
+    .stTextInput input, .stNumberInput input,
+    .stDateInput input, .stTextArea textarea,
+    .stTimeInput input, .stPasswordInput input {{
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--input-border) !important;
+        border-radius: 10px !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        padding: 10px 14px !important;
+        direction: rtl !important;
+        text-align: right !important;
+        caret-color: var(--primary);
+    }}
+    input::placeholder, textarea::placeholder {{
+        color: var(--faint) !important;
+        font-weight: 500 !important;
+        opacity: 0.85;
+    }}
+    input:focus, textarea:focus {{
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 4px var(--primary-soft) !important;
+        outline: none !important;
+    }}
+
+    div[data-baseweb="input"], div[data-baseweb="textarea"],
+    div[data-baseweb="select"] > div {{
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-color: var(--input-border) !important;
+        border-radius: 10px !important;
+        direction: rtl !important;
+    }}
+    div[data-baseweb="input"]:focus-within,
+    div[data-baseweb="textarea"]:focus-within,
+    div[data-baseweb="select"]:focus-within {{
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 4px var(--primary-soft) !important;
+    }}
+
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div {{
+        color: var(--text) !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
+    }}
+
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="popover"] [role="listbox"],
+    div[data-baseweb="menu"] {{
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        direction: rtl !important;
+    }}
+    div[data-baseweb="popover"] li,
+    div[data-baseweb="menu"] li {{
+        color: var(--text) !important;
+        font-size: 14.5px !important;
+        font-weight: 600 !important;
+        padding: 10px 14px !important;
+    }}
+    div[data-baseweb="popover"] li:hover,
+    div[data-baseweb="menu"] li:hover {{
+        background: var(--primary-soft) !important;
+    }}
+
+    /* Date/number inner */
+    .stDateInput input, .stNumberInput input {{
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+    }}
+
+    /* ==========================================================
+       Buttons
+    ========================================================== */
+    .stButton > button,
+    .stFormSubmitButton > button,
+    .stDownloadButton > button,
+    button[kind="secondary"], button[kind="primary"] {{
+        font-family: 'Cairo', sans-serif !important;
+        font-size: 14.5px !important;
+        font-weight: 700 !important;
+        border-radius: 10px !important;
+        padding: 9px 20px !important;
+        transition: all .15s ease !important;
+        border: 1px solid var(--border-2) !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        direction: rtl !important;
+        box-shadow: var(--shadow-sm) !important;
+    }}
+    .stButton > button:hover,
+    .stFormSubmitButton > button:hover {{
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        transform: translateY(-1px);
+    }}
+
+    .stButton > button[kind="primary"],
+    .stFormSubmitButton > button[kind="primary"] {{
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 6px 18px var(--primary-glow) !important;
+    }}
+    .stButton > button[kind="primary"]:hover,
+    .stFormSubmitButton > button[kind="primary"]:hover {{
+        background: linear-gradient(135deg, var(--primary-2) 0%, var(--primary) 100%) !important;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px var(--primary-glow) !important;
+    }}
+
+    /* ==========================================================
+       Metrics
+    ========================================================== */
+    [data-testid="stMetric"] {{
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important;
+        padding: 18px 20px !important;
+        box-shadow: var(--shadow-sm);
+    }}
+    [data-testid="stMetricLabel"] p {{
+        color: var(--muted) !important;
+        font-weight: 700 !important;
+        font-size: 13.5px !important;
+        text-align: right !important;
+    }}
+    [data-testid="stMetricValue"] {{
+        color: var(--text) !important;
+        font-weight: 900 !important;
+        font-size: 26px !important;
+        text-align: right !important;
+        letter-spacing: -0.01em;
+    }}
+
+    /* ==========================================================
+       Tabs
+    ========================================================== */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 6px;
+        border-bottom: 2px solid var(--border);
+        background: transparent;
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        font-family: 'Cairo', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 14.5px !important;
+        padding: 12px 20px !important;
+        color: var(--muted) !important;
+        border-radius: 10px 10px 0 0;
+        border-bottom: 2px solid transparent;
+    }}
+    .stTabs [aria-selected="true"] {{
+        color: var(--primary) !important;
+        border-bottom-color: var(--primary) !important;
+        background: var(--primary-soft) !important;
+    }}
+
+    /* ==========================================================
+       Expander
+    ========================================================== */
+    [data-testid="stExpander"] {{
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
+        background: var(--surface) !important;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }}
+    [data-testid="stExpander"] summary {{
+        font-weight: 700 !important;
+        font-size: 14.5px !important;
+        color: var(--text) !important;
+        padding: 14px 18px !important;
+        background: var(--surface) !important;
+    }}
+    [data-testid="stExpander"] summary p {{
+        font-size: 14.5px !important; font-weight: 700 !important; color: var(--text) !important;
+    }}
+    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {{
+        background: var(--surface-2) !important;
+        padding: 16px 18px !important;
+    }}
+
+    /* ==========================================================
+       Alerts
+    ========================================================== */
+    [data-testid="stAlert"],
+    .stAlert > div {{
+        border-radius: 12px !important;
+        border: 1px solid var(--border) !important;
+        font-size: 14.5px !important;
+        font-weight: 600 !important;
+        direction: rtl !important;
+        text-align: right !important;
+    }}
+    [data-testid="stAlert"] p {{
+        font-size: 14.5px !important;
+        font-weight: 600 !important;
+    }}
+
+    /* ==========================================================
+       Dataframe / Data editor
+    ========================================================== */
+    [data-testid="stDataFrame"], [data-testid="stDataEditor"] {{
+        border: 1px solid var(--border) !important;
+        border-radius: 14px !important;
+        overflow: hidden;
+        direction: rtl !important;
+        box-shadow: var(--shadow-sm);
+    }}
+    [data-testid="stDataFrame"] * , [data-testid="stDataEditor"] * {{
+        font-size: 14px !important;
+        font-weight: 600 !important;
+    }}
+    [data-testid="stDataFrame"] [role="columnheader"],
+    [data-testid="stDataEditor"] [role="columnheader"] {{
+        background: var(--surface-2) !important;
+        color: var(--text) !important;
+        font-weight: 800 !important;
+    }}
+
+    /* ==========================================================
+       Forms
+    ========================================================== */
+    [data-testid="stForm"] {{
+        border: 1px solid var(--border) !important;
+        border-radius: 16px !important;
+        padding: 22px !important;
+        background: var(--surface) !important;
+        box-shadow: var(--shadow-sm);
+    }}
+
+    /* ==========================================================
+       Custom components
+    ========================================================== */
+    .page-head {{
+        display: flex; align-items: center; justify-content: space-between;
+        margin: 6px 0 24px 0;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--border);
+    }}
+    .page-head .titles {{ display: flex; flex-direction: column; gap: 4px; }}
+    .page-head .title {{
+        font-size: 24px; font-weight: 900; color: var(--text) !important;
+        letter-spacing: -0.01em; line-height: 1.2;
+    }}
+    .page-head .sub {{
+        font-size: 13.5px; color: var(--muted) !important;
+        font-weight: 600; line-height: 1.4;
+    }}
+    .page-head .badge {{
+        font-size: 11.5px; font-weight: 800;
+        color: var(--primary) !important;
+        background: var(--primary-soft);
+        padding: 5px 14px;
+        border-radius: 999px;
+        letter-spacing: .3px;
+        border: 1px solid rgba(124,140,255,0.2);
+    }}
+
+    .section-title {{
+        display: flex; align-items: center; gap: 12px;
+        font-size: 16px; font-weight: 800; color: var(--text) !important;
+        margin: 26px 0 14px 0;
+        letter-spacing: -0.005em;
+    }}
+    .section-title::before {{
+        content: ''; width: 4px; height: 20px; border-radius: 2px;
+        background: linear-gradient(180deg, var(--primary), var(--primary-2));
+    }}
+
+    .stat {{
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--r-xl);
-        padding: 34px 30px 26px 30px;
+        border-radius: 16px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow-sm);
+        display: flex; align-items: center; gap: 16px;
+        transition: transform .15s ease, box-shadow .15s ease;
+        min-height: 82px;
+    }}
+    .stat:hover {{ transform: translateY(-2px); box-shadow: var(--shadow); }}
+    .stat .icon {{
+        width: 48px; height: 48px; border-radius: 13px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        flex-shrink: 0;
+    }}
+    .stat .icon.success {{ background: var(--success-soft); color: var(--success); }}
+    .stat .icon.danger  {{ background: var(--danger-soft);  color: var(--danger); }}
+    .stat .icon.warning {{ background: var(--warning-soft); color: var(--warning); }}
+    .stat .icon.accent  {{ background: var(--accent-soft);  color: var(--accent); }}
+    .stat .val {{
+        font-size: 24px; font-weight: 900; color: var(--text) !important;
+        line-height: 1.15; letter-spacing: -0.01em;
+    }}
+    .stat .lbl {{
+        font-size: 13px; color: var(--muted) !important;
+        font-weight: 700; margin-top: 4px; line-height: 1.3;
+    }}
+
+    .empty {{
+        padding: 34px 22px; text-align: center;
+        color: var(--muted) !important;
+        background: var(--surface-2);
+        border: 1px dashed var(--border-2);
+        border-radius: 14px;
+        font-size: 14.5px; font-weight: 600;
+    }}
+
+    .theme-toggle-wrap {{
+        display: flex; align-items: center; justify-content: space-between;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--sb-border);
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 12px;
+    }}
+    .theme-toggle-wrap .lbl {{
+        font-size: 13px; font-weight: 700;
+        color: var(--sb-text) !important;
+    }}
+
+    /* ==========================================================
+       Login page
+    ========================================================== */
+    .login-card {{
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        padding: 38px 34px 30px 34px;
         box-shadow: var(--shadow-lg);
         position: relative;
-    }
-    .login-brand {
-        text-align: center;
-        margin-bottom: 24px;
-    }
-    .login-brand .mark {
-        width: 62px; height: 62px;
-        margin: 0 auto 14px auto;
-        border-radius: 18px;
+        overflow: hidden;
+    }}
+    .login-card::before {{
+        content: ''; position: absolute; inset: 0 0 auto 0; height: 6px;
+        background: linear-gradient(90deg, #4f46e5, #7c3aed 50%, #ec4899);
+    }}
+    .login-brand {{ text-align: center; margin-bottom: 26px; }}
+    .login-brand .mark {{
+        width: 70px; height: 70px; margin: 0 auto 16px auto;
+        border-radius: 20px;
         background: linear-gradient(135deg, #4f46e5, #7c3aed 60%, #ec4899);
         display: flex; align-items: center; justify-content: center;
-        color: #fff; font-size: 30px;
-        box-shadow: 0 12px 28px rgba(79,70,229,.4);
-    }
-    .login-brand .t1 {
-        font-size: 22px; font-weight: 900; color: var(--text);
+        color: #fff !important; font-size: 34px;
+        box-shadow: 0 14px 32px rgba(79,70,229,.42);
+    }}
+    .login-brand .t1 {{
+        font-size: 24px; font-weight: 900; color: var(--text) !important;
         letter-spacing: -0.01em;
-    }
-    .login-brand .t2 {
-        font-size: 13px; color: var(--muted); margin-top: 4px; font-weight: 600;
-    }
-    .login-foot {
-        text-align: center;
-        font-size: 11px;
-        color: var(--faint);
-        margin-top: 18px;
-    }
+    }}
+    .login-brand .t2 {{
+        font-size: 13.5px; color: var(--muted) !important;
+        margin-top: 6px; font-weight: 600;
+    }}
+    .login-foot {{
+        text-align: center; font-size: 12px;
+        color: var(--faint) !important; margin-top: 22px; font-weight: 600;
+    }}
 
-    /* ====== Empty states ====== */
-    .empty {
-        padding: 30px;
-        text-align: center;
-        color: var(--muted);
-        background: var(--surface-2);
-        border: 1px dashed var(--border-strong);
-        border-radius: var(--r-lg);
-        font-size: 14px;
-        font-weight: 600;
-    }
+    /* ==========================================================
+       Scrollbars
+    ========================================================== */
+    ::-webkit-scrollbar {{ width: 9px; height: 9px; }}
+    ::-webkit-scrollbar-track {{ background: transparent; }}
+    ::-webkit-scrollbar-thumb {{
+        background: var(--border-2); border-radius: 6px;
+    }}
+    ::-webkit-scrollbar-thumb:hover {{ background: var(--muted); }}
 
-    /* ====== Chips ====== */
-    .chip {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 999px;
-        font-size: 11.5px;
-        font-weight: 700;
-        margin-inline-start: 6px;
-    }
-    .chip.ok  { background: var(--success-soft); color: var(--success); }
-    .chip.no  { background: var(--danger-soft);  color: var(--danger); }
-    .chip.wrn { background: var(--warning-soft); color: var(--warning); }
-    .chip.inf { background: var(--primary-soft); color: var(--primary); }
-
-    /* ====== Misc ====== */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-    /* Hide Streamlit decoration */
-    #MainMenu { visibility: hidden; }
-    footer { visibility: hidden; }
-    [data-testid="stToolbar"] { display: none; }
-    [data-testid="stDecoration"] { display: none; }
+    /* ==========================================================
+       Small screens
+    ========================================================== */
+    @media (max-width: 900px) {{
+        .block-container {{ padding-inline: 1rem !important; }}
+        .page-head .title {{ font-size: 20px; }}
+        .stat .val {{ font-size: 20px; }}
+        [data-testid="stMetricValue"] {{ font-size: 22px !important; }}
+    }}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+    """
+
+
+# ==========================================================
+# تطبيق CSS حسب الثيم الحالي
+# ==========================================================
+st.markdown(build_css(st.session_state.theme), unsafe_allow_html=True)
 
 
 # ==========================================================
@@ -627,9 +889,7 @@ def gen_demo_sessions(teachers):
         for t in teachers:
             for _ in range(rnd.randint(2, 5)):
                 out.append({
-                    "id": sid,
-                    "teacher_id": t["id"],
-                    "date": d.isoformat(),
+                    "id": sid, "teacher_id": t["id"], "date": d.isoformat(),
                     "grade": rnd.choice(GRADES),
                     "specialty": rnd.choice(SPECIALTIES),
                     "subject": rnd.choice([
@@ -650,9 +910,9 @@ def gen_demo_sessions(teachers):
 # تهيئة البيانات
 # ==========================================================
 def init_data():
-    if st.session_state.get("_init_v21"):
+    if st.session_state.get("_init_v22"):
         return
-    st.session_state._init_v21 = True
+    st.session_state._init_v22 = True
 
     st.session_state.logged_in = False
     st.session_state.user_id = None
@@ -711,30 +971,30 @@ def init_data():
     st.session_state.users = users
 
     students_seed = [
-        ("أحمد محمود السيد", "STD-001", "30101011234567", "الأول الصناعي", "ميكانيكا عامة",
-         ["01011112222", "01011113333"], ["01211112222"], "نجار"),
-        ("مريم خالد عبد الله", "STD-002", "30201021234567", "الأول الصناعي", "كهرباء وإلكترونيات",
-         ["01022223333"], ["01222223333"], "مدرسة"),
-        ("يوسف إبراهيم حسن", "STD-003", "30101031234567", "الثاني الصناعي", "لحام وتشكيل معادن",
-         ["01033334444"], ["01233334444"], "حداد"),
-        ("سلمى أحمد فتحي", "STD-004", "30201041234567", "الثاني الصناعي", "خراطة",
-         ["01044445555"], ["01244445555"], "تاجر"),
-        ("عمر سامي رشاد", "STD-005", "30101051234567", "الثالث الصناعي", "تبريد وتكييف",
-         ["01055556666"], ["01255556666"], "كهربائي"),
-        ("نور الهدى مصطفى", "STD-006", "30201061234567", "الأول الصناعي", "ميكانيكا عامة",
-         ["01066667777"], ["01266667777"], "محاسب"),
-        ("محمد عادل شعبان", "STD-007", "30101071234567", "الثاني الصناعي", "كهرباء وإلكترونيات",
-         ["01077778888"], ["01277778888"], "سباك"),
-        ("حبيبة وليد أنور", "STD-008", "30201081234567", "الثالث الصناعي", "لحام وتشكيل معادن",
-         ["01088889999"], ["01288889999"], "صيدلي"),
+        ("أحمد محمود السيد", "STD-001", "30101011234567", "الأول الصناعي",
+         "ميكانيكا عامة", ["01011112222"], ["01211112222"], "نجار"),
+        ("مريم خالد عبد الله", "STD-002", "30201021234567", "الأول الصناعي",
+         "كهرباء وإلكترونيات", ["01022223333"], ["01222223333"], "مدرسة"),
+        ("يوسف إبراهيم حسن", "STD-003", "30101031234567", "الثاني الصناعي",
+         "لحام وتشكيل معادن", ["01033334444"], ["01233334444"], "حداد"),
+        ("سلمى أحمد فتحي", "STD-004", "30201041234567", "الثاني الصناعي",
+         "خراطة", ["01044445555"], ["01244445555"], "تاجر"),
+        ("عمر سامي رشاد", "STD-005", "30101051234567", "الثالث الصناعي",
+         "تبريد وتكييف", ["01055556666"], ["01255556666"], "كهربائي"),
+        ("نور الهدى مصطفى", "STD-006", "30201061234567", "الأول الصناعي",
+         "ميكانيكا عامة", ["01066667777"], ["01266667777"], "محاسب"),
+        ("محمد عادل شعبان", "STD-007", "30101071234567", "الثاني الصناعي",
+         "كهرباء وإلكترونيات", ["01077778888"], ["01277778888"], "سباك"),
+        ("حبيبة وليد أنور", "STD-008", "30201081234567", "الثالث الصناعي",
+         "لحام وتشكيل معادن", ["01088889999"], ["01288889999"], "صيدلي"),
     ]
 
     students = []
     for idx, s in enumerate(students_seed, start=1):
         students.append({
             "id": idx, "name": s[0], "code": s[1], "national_id": s[2],
-            "grade": s[3], "specialty": s[4],
-            "phones": s[5], "parent_phones": s[6], "father_job": s[7],
+            "grade": s[3], "specialty": s[4], "phones": s[5],
+            "parent_phones": s[6], "father_job": s[7],
             "attendance": build_attendance(idx),
             "penalties": (
                 [{"date": (date.today() - timedelta(days=3)).isoformat(),
@@ -747,7 +1007,7 @@ def init_data():
 
 
 # ==========================================================
-# مكونات واجهة موحدة
+# مكونات موحدة
 # ==========================================================
 def page_head(title, subtitle="", badge=""):
     badge_html = f"<span class='badge'>{badge}</span>" if badge else ""
@@ -791,23 +1051,29 @@ def empty_state(text):
 
 
 # ==========================================================
-# صفحة تسجيل الدخول
+# صفحة الدخول
 # ==========================================================
 def login_page():
-    st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+    # زر تبديل الثيم في أعلى الصفحة
+    top1, top2, top3 = st.columns([1, 4, 1])
+    with top3:
+        icon = "☀️" if st.session_state.theme == "dark" else "🌙"
+        lbl = "الوضع الفاتح" if st.session_state.theme == "dark" else "الوضع الداكن"
+        if st.button(f"{icon}  {lbl}", key="login_theme", use_container_width=True):
+            st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
+            st.rerun()
+
+    st.markdown("<div style='height:4vh'></div>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 1.15, 1])
     with c2:
         st.markdown(
             f"""
-            <div class='login-shell'>
-                <div class='login-card'>
-                    <div class='login-brand'>
-                        <div class='mark'>🎓</div>
-                        <div class='t1'>{APP_NAME}</div>
-                        <div class='t2'>{APP_TAGLINE}</div>
-                    </div>
+            <div class='login-card'>
+                <div class='login-brand'>
+                    <div class='mark'>🎓</div>
+                    <div class='t1'>{APP_NAME}</div>
+                    <div class='t2'>{APP_TAGLINE}</div>
                 </div>
-            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -817,6 +1083,7 @@ def login_page():
             ok = st.form_submit_button(
                 "تسجيل الدخول", use_container_width=True, type="primary"
             )
+        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown(
             f"<div class='login-foot'>الإصدار {APP_VERSION}</div>",
             unsafe_allow_html=True,
@@ -868,17 +1135,17 @@ def render_sidebar():
             unsafe_allow_html=True,
         )
 
+        # زر تبديل الثيم
+        icon = "☀️" if st.session_state.theme == "dark" else "🌙"
+        lbl = "الوضع الفاتح" if st.session_state.theme == "dark" else "الوضع الداكن"
+        if st.button(f"{icon}  {lbl}", key="sb_theme", use_container_width=True):
+            st.session_state.theme = "dark" if st.session_state.theme == "light" else "light"
+            st.rerun()
+
         if role == "admin":
-            pages = [
-                "لوحة التحكم",
-                "ملف المدير",
-                "الطلاب",
-                "المدرسون",
-                "دفتر الجلسات",
-                "الحضور والغياب",
-                "المستحقات المالية",
-                "إدارة المستخدمين",
-            ]
+            pages = ["لوحة التحكم", "ملف المدير", "الطلاب", "المدرسون",
+                     "دفتر الجلسات", "الحضور والغياب", "المستحقات المالية",
+                     "إدارة المستخدمين"]
         elif role == "teacher":
             pages = ["دفتر الجلسات", "الحضور والغياب", "مستحقاتي"]
         elif role == "accountant":
@@ -899,14 +1166,15 @@ def render_sidebar():
             f"""
             <div class='sb-footer'>
                 <span class='ver'>v {APP_VERSION}</span>
-                <div style='margin-top:6px;'>التوكل جيلا © {date.today().year}</div>
+                <div style='margin-top:8px;'>التوكل جيلا © {date.today().year}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        if st.button("تسجيل الخروج", use_container_width=True, key="logout"):
-            for k in ["logged_in", "user_id", "role", "display_name", "email", "current_teacher_id"]:
+        if st.button("🚪  تسجيل الخروج", use_container_width=True, key="logout"):
+            for k in ["logged_in", "user_id", "role", "display_name",
+                      "email", "current_teacher_id"]:
                 st.session_state[k] = None if k != "logged_in" else False
             st.session_state.role = ""
             st.session_state.display_name = ""
@@ -1008,7 +1276,7 @@ def page_students():
             empty_state("لا يوجد طلاب مسجلون.")
         else:
             c1, c2 = st.columns([2, 1])
-            q = c1.text_input("بحث بالاسم أو الكود", placeholder="").strip().lower()
+            q = c1.text_input("بحث بالاسم أو الكود").strip().lower()
             gr = c2.selectbox("الصف", ["الكل"] + GRADES)
 
             filtered = [
@@ -1103,7 +1371,8 @@ def page_students():
 
         section("الجزاءات")
         if s["penalties"]:
-            df = pd.DataFrame([{"التاريخ": x["date"], "السبب": x["reason"]} for x in s["penalties"]])
+            df = pd.DataFrame([{"التاريخ": x["date"], "السبب": x["reason"]}
+                               for x in s["penalties"]])
             st.dataframe(df, use_container_width=True, hide_index=True)
         else:
             empty_state("لا توجد جزاءات.")
@@ -1117,7 +1386,8 @@ def page_students():
             st.rerun()
 
         section("الملاحظات")
-        nn = st.text_area("ملاحظات", value=s.get("notes", ""), key=f"n_{s['id']}", height=80)
+        nn = st.text_area("ملاحظات", value=s.get("notes", ""),
+                          key=f"n_{s['id']}", height=80)
         if st.button("حفظ", key=f"sn_{s['id']}"):
             s["notes"] = nn.strip()
             st.success("تم الحفظ.")
@@ -1163,14 +1433,15 @@ def page_teachers():
                     gy = c2.text_input("سنة التخرج", value=t["grad_year"])
                     sp = c1.selectbox(
                         "التخصص", SPECIALTIES,
-                        index=SPECIALTIES.index(t["specialty"]) if t["specialty"] in SPECIALTIES else 0,
+                        index=SPECIALTIES.index(t["specialty"])
+                        if t["specialty"] in SPECIALTIES else 0,
                     )
-                    pr = c2.number_input(
-                        "ثمن الحصة", min_value=0.0, value=float(t["session_price"]),
-                        step=5.0, format="%.2f",
-                    )
+                    pr = c2.number_input("ثمن الحصة", min_value=0.0,
+                                         value=float(t["session_price"]),
+                                         step=5.0, format="%.2f")
                     ac = st.checkbox("الحساب مفعّل", value=t.get("active", True))
-                    sv = st.form_submit_button("حفظ", type="primary", use_container_width=True)
+                    sv = st.form_submit_button("حفظ", type="primary",
+                                               use_container_width=True)
                 if sv:
                     t.update({
                         "name": nm.strip(), "national_id": nid.strip(),
@@ -1191,7 +1462,8 @@ def page_teachers():
             gy = c2.text_input("سنة التخرج")
             sp = c1.selectbox("التخصص", SPECIALTIES)
             pr = c2.number_input("ثمن الحصة", min_value=0.0, value=75.0, step=5.0)
-            ok = st.form_submit_button("إضافة المدرس", type="primary", use_container_width=True)
+            ok = st.form_submit_button("إضافة المدرس", type="primary",
+                                       use_container_width=True)
         if ok:
             nm = (nm or "").strip()
             cd = (cd or "").strip()
@@ -1239,7 +1511,8 @@ def page_sessions():
             s_per = c3.selectbox("الحصة", PERIODS)
             s_dur = c1.number_input("المدة (دقيقة)", 15, 300, 90, 15)
             s_notes = c2.text_input("ملاحظات")
-            ok = st.form_submit_button("حفظ الجلسة", type="primary", use_container_width=True)
+            ok = st.form_submit_button("حفظ الجلسة", type="primary",
+                                       use_container_width=True)
 
         if ok:
             nid = max((s["id"] for s in st.session_state.sessions), default=0) + 1
@@ -1313,7 +1586,7 @@ def page_attendance():
         empty_state("لا يوجد طلاب.")
         return
 
-    c1, c2, c3 = st.columns([1, 1, 2])
+    c1, c2 = st.columns([1, 1])
     sel_date = c1.date_input("التاريخ", value=date.today())
     gr = c2.selectbox("الصف", ["الكل"] + GRADES, key="att_gr")
     dstr = sel_date.isoformat()
@@ -1321,15 +1594,16 @@ def page_attendance():
 
     section("تسجيل الحضور")
     mark_all = st.radio(
-        "إجراء سريع", ["بدون", "تعليم الكل حاضر", "تعليم الكل غائب"],
-        horizontal=True, label_visibility="collapsed",
+        "إجراء سريع",
+        ["بدون", "الكل حاضر", "الكل غائب"],
+        horizontal=True,
+        label_visibility="collapsed",
     )
 
-    default_status = "حاضر"
     df = pd.DataFrame([{
         "الكود": s["code"], "الطالب": s["name"],
         "الصف": s.get("grade", "-"),
-        "الحالة": s["attendance"].get(dstr, default_status),
+        "الحالة": s["attendance"].get(dstr, "حاضر"),
     } for s in filtered])
 
     edited = st.data_editor(
@@ -1344,12 +1618,12 @@ def page_attendance():
     )
 
     if st.button("حفظ سجل الحضور", type="primary", use_container_width=True):
-        target_status = {"بدون": None, "تعليم الكل حاضر": "حاضر", "تعليم الكل غائب": "غائب"}[mark_all]
+        target = {"بدون": None, "الكل حاضر": "حاضر", "الكل غائب": "غائب"}[mark_all]
         by_code = {s["code"]: s for s in students}
         for _, row in edited.iterrows():
             code = row["الكود"]
             if code in by_code:
-                by_code[code]["attendance"][dstr] = target_status or row["الحالة"]
+                by_code[code]["attendance"][dstr] = target or row["الحالة"]
         st.success(f"تم حفظ حضور {dstr}.")
         st.rerun()
 
@@ -1366,7 +1640,7 @@ def page_attendance():
 
 
 # ==========================================================
-# المستحقات المالية
+# المستحقات
 # ==========================================================
 def page_payroll():
     page_head("المستحقات المالية", "كشف حساب المدرسين الشهري")
@@ -1412,7 +1686,7 @@ def page_payroll():
 
 
 # ==========================================================
-# صفحة مستحقات المعلم الشخصية
+# مستحقاتي
 # ==========================================================
 def page_my_payroll():
     tid = st.session_state.current_teacher_id
@@ -1479,7 +1753,8 @@ def page_users():
         nm = c1.text_input("الاسم", value=u["name"])
         em = c2.text_input("البريد", value=u["email"])
         un = c1.text_input("اسم المستخدم", value=u.get("username", ""))
-        pw = c2.text_input("كلمة مرور جديدة (اتركها فارغة لعدم التغيير)", value="", type="password")
+        pw = c2.text_input("كلمة مرور جديدة (اتركها فارغة لعدم التغيير)",
+                           value="", type="password")
         rl = c1.selectbox("الدور", list(ROLES.keys()),
                           format_func=lambda x: ROLES[x],
                           index=list(ROLES.keys()).index(u["role"]))
@@ -1519,7 +1794,8 @@ def page_users():
         n_em = c2.text_input("البريد الإلكتروني")
         n_un = c1.text_input("اسم المستخدم")
         n_pw = c2.text_input("كلمة المرور", type="password")
-        n_rl = c1.selectbox("الدور", list(ROLES.keys()), format_func=lambda x: ROLES[x])
+        n_rl = c1.selectbox("الدور", list(ROLES.keys()),
+                            format_func=lambda x: ROLES[x])
         link_tid = None
         if n_rl == "teacher":
             t_opts = {"— بدون ربط —": None}
@@ -1561,33 +1837,23 @@ def main():
     role = st.session_state.role
 
     if role == "teacher":
-        if choice == "دفتر الجلسات":
-            page_sessions()
-        elif choice == "الحضور والغياب":
-            page_attendance()
-        elif choice == "مستحقاتي":
-            page_my_payroll()
+        if choice == "دفتر الجلسات": page_sessions()
+        elif choice == "الحضور والغياب": page_attendance()
+        elif choice == "مستحقاتي": page_my_payroll()
         return
 
     if role == "accountant":
-        if choice == "لوحة التحكم":
-            page_dashboard()
-        elif choice == "دفتر الجلسات":
-            page_sessions()
-        elif choice == "المستحقات المالية":
-            page_payroll()
+        if choice == "لوحة التحكم": page_dashboard()
+        elif choice == "دفتر الجلسات": page_sessions()
+        elif choice == "المستحقات المالية": page_payroll()
         return
 
     if role == "viewer":
-        if choice == "لوحة التحكم":
-            page_dashboard()
-        elif choice == "الطلاب":
-            page_students()
-        elif choice == "المدرسون":
-            page_teachers()
+        if choice == "لوحة التحكم": page_dashboard()
+        elif choice == "الطلاب": page_students()
+        elif choice == "المدرسون": page_teachers()
         return
 
-    # admin
     routes = {
         "لوحة التحكم": page_dashboard,
         "ملف المدير": page_manager_profile,
