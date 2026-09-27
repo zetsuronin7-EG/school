@@ -983,6 +983,7 @@ def login_page():
             st.session_state.current_teacher_id = user.get("teacher_id")
             st.rerun()
 
+
 # ==========================================================
 # Sidebar
 # ==========================================================
