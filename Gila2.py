@@ -674,6 +674,32 @@ table.data-tbl tbody tr:hover td {
     .block-container { padding-inline: 1rem !important; }
     .page-head .title { font-size: 20px; }
 }
+
+/* ===================== [إضافة جديدة] إصلاح أيقونة العين في حقول كلمة المرور ===================== */
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0');
+
+span.material-symbols-rounded,
+span.material-symbols-outlined,
+span.material-icons,
+span.material-symbols-sharp,
+[data-testid="stIconMaterial"],
+[data-testid="stIconMaterial"] span {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', 'Material Icons' !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    direction: ltr !important;
+    -webkit-font-feature-settings: 'liga' !important;
+    -webkit-font-smoothing: antialiased !important;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+    color: currentColor !important;
+}
 </style>
 """
 
