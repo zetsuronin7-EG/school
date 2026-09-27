@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 نظام إدارة مدرسة التوكل جيلا للتعليم والتدريب المزدوج
-الإصدار: 3.0.0
+الإصدار: 3.1.0
 """
 
 import hashlib
@@ -13,13 +13,13 @@ import pandas as pd
 import streamlit as st
 
 # ==========================================================
-# ثوابت الهوية
+# ثوابت
 # ==========================================================
 APP_NAME = "التوكل جيلا"
 APP_FULL = "مدرسة التوكل جيلا للتعليم والتدريب المزدوج"
 APP_LOCATION = "داخل شركة التوكل للكهربائيات — العاشر من رمضان — الشرقية"
 APP_FIELD = "قسم الكهرباء"
-APP_VERSION = "3.0.0"
+APP_VERSION = "3.1.0"
 
 GRADES = ["الأول", "الثاني", "الثالث"]
 SPECIALTIES = ["كهرباء", "إلكترونيات", "تحكم آلي"]
@@ -30,6 +30,8 @@ ROLES = {
     "accountant": "محاسب",
     "viewer": "مشاهد",
 }
+
+ATT_OPTIONS = ["حاضر", "غائب", "متأخر"]
 
 # ==========================================================
 # إعداد الصفحة
@@ -42,781 +44,668 @@ st.set_page_config(
 )
 
 # ==========================================================
-# حالة الثيم
+# CSS ثابت (وضع داكن فقط)
 # ==========================================================
-if "theme" not in st.session_state:
-    st.session_state.theme = "light"
+CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+    --bg: #0a0f1c;
+    --bg-2: #060912;
+    --surface: #101828;
+    --surface-2: #0d1523;
+    --surface-3: #17213a;
+    --border: #1e2a44;
+    --border-2: #2a3a5c;
+    --text: #f1f5fb;
+    --text-2: #cbd5e6;
+    --muted: #8ea0bf;
+    --faint: #5e6f8e;
+    --primary: #3b82f6;
+    --primary-2: #60a5fa;
+    --primary-soft: rgba(59,130,246,0.16);
+    --primary-glow: rgba(59,130,246,0.4);
+    --accent: #f59e0b;
+    --accent-2: #fbbf24;
+    --accent-soft: rgba(245,158,11,0.16);
+    --success: #22c55e;
+    --success-soft: rgba(34,197,94,0.14);
+    --danger: #ef4444;
+    --danger-soft: rgba(239,68,68,0.14);
+    --warning: #f97316;
+    --warning-soft: rgba(249,115,22,0.14);
+    --info: #06b6d4;
+    --info-soft: rgba(6,182,212,0.14);
+    --sb-bg: #050810;
+    --sb-bg-2: #0a1224;
+    --sb-text: #e8eefc;
+    --sb-muted: #8494b6;
+    --sb-border: rgba(255,255,255,0.07);
+    --sb-hover: rgba(59,130,246,0.15);
+    --sb-active: rgba(59,130,246,0.22);
+    --sb-active-bar: #fbbf24;
+    --input-bg: #0d1523;
+    --input-border: #1e2a44;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+    --shadow: 0 6px 20px rgba(0,0,0,0.45);
+    --shadow-lg: 0 18px 45px rgba(0,0,0,0.55);
+}
+
+html, body, [class*="css"], .stApp, .stApp * {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+html, body { font-size: 15.5px !important; }
+.stApp { background: var(--bg) !important; color: var(--text) !important; }
+
+p, span, li, td, th, .stMarkdown, .stText,
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stCaptionContainer"] *,
+[data-testid="stWidgetLabel"] * { color: var(--text-2) !important; }
+
+h1, h2, h3, h4, h5, h6, strong, b { color: var(--text) !important; font-weight: 800 !important; }
+h1 { font-size: 26px !important; font-weight: 900 !important; }
+h2 { font-size: 22px !important; }
+h3 { font-size: 19px !important; }
+
+[data-testid="stWidgetLabel"] p,
+label[data-baseweb="form-control-label"],
+.stTextInput label, .stSelectbox label,
+.stNumberInput label, .stDateInput label, .stTextArea label {
+    color: var(--text) !important;
+    font-size: 14.5px !important;
+    font-weight: 700 !important;
+}
+
+/* ===================== Layout: sidebar RIGHT ===================== */
+[data-testid="stAppViewContainer"] {
+    display: flex !important;
+    flex-direction: row !important;
+    background: var(--bg) !important;
+}
+[data-testid="stAppViewContainer"] > section[data-testid="stSidebar"] {
+    order: 2 !important;
+    flex: 0 0 280px !important;
+    width: 280px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+    background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-2) 100%) !important;
+    border-left: 1px solid var(--sb-border) !important;
+    border-right: none !important;
+    direction: rtl !important;
+    text-align: right !important;
+}
+[data-testid="stAppViewContainer"] > [data-testid="stMain"],
+[data-testid="stAppViewContainer"] > section.main,
+[data-testid="stAppViewContainer"] > .main {
+    order: 1 !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    direction: rtl !important;
+    background: var(--bg) !important;
+}
+section[data-testid="stSidebar"] * {
+    color: var(--sb-text) !important;
+    direction: rtl !important;
+    text-align: right !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarHeader"],
+section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+section[data-testid="stSidebar"] button[kind="header"],
+section[data-testid="stSidebar"] button[kind="headerNoPadding"] {
+    display: none !important;
+}
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    left: auto !important;
+    z-index: 99999 !important;
+}
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow) !important;
+    border-radius: 12px !important;
+    color: var(--primary) !important;
+}
+[data-testid="stSidebarCollapsedControl"] svg,
+[data-testid="collapsedControl"] svg {
+    fill: var(--primary) !important;
+    color: var(--primary) !important;
+}
+
+#MainMenu, footer, [data-testid="stToolbar"],
+[data-testid="stDecoration"], [data-testid="stStatusWidget"] {
+    display: none !important;
+}
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    height: 0 !important;
+}
+.block-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 2.5rem !important;
+    padding-inline: 2rem !important;
+    max-width: 1500px !important;
+}
+
+/* ===================== Sidebar ===================== */
+.sb-brand {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 2px 16px 2px;
+    border-bottom: 1px solid var(--sb-border);
+    margin-bottom: 14px;
+}
+.sb-brand .brand-text { display: flex; flex-direction: column; }
+.sb-brand .name {
+    font-weight: 900 !important; font-size: 17px !important;
+    color: var(--sb-text) !important; line-height: 1.15;
+}
+.sb-brand .tag {
+    font-size: 11.5px !important; color: var(--sb-muted) !important;
+    font-weight: 600 !important; margin-top: 3px;
+}
+.sb-user {
+    background: rgba(255,255,255,0.045);
+    border: 1px solid var(--sb-border);
+    border-radius: 14px;
+    padding: 13px 14px;
+    margin-bottom: 12px;
+}
+.sb-user .n { font-weight: 800 !important; font-size: 15px !important; color: var(--sb-text) !important; }
+.sb-user .r {
+    display: inline-block; margin-top: 6px;
+    font-size: 11.5px !important; color: #c7d2fe !important;
+    font-weight: 700 !important;
+    background: rgba(59,130,246,0.25);
+    padding: 3px 10px; border-radius: 999px;
+}
+.sb-user .e {
+    font-size: 11.5px !important; color: var(--sb-muted) !important;
+    margin-top: 8px; direction: ltr; text-align: right; word-break: break-all;
+}
+
+section[data-testid="stSidebar"] [role="radiogroup"] {
+    gap: 4px; display: flex; flex-direction: column;
+}
+section[data-testid="stSidebar"] .stRadio > label:first-child { display: none !important; }
+section[data-testid="stSidebar"] .stRadio label {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    justify-content: flex-start !important;
+    align-items: center; gap: 10px;
+    padding: 11px 14px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .15s ease;
+    color: var(--sb-text) !important;
+    position: relative;
+}
+section[data-testid="stSidebar"] .stRadio label p {
+    font-size: 15px !important; font-weight: 600 !important;
+    color: var(--sb-text) !important;
+}
+section[data-testid="stSidebar"] .stRadio label:hover { background: var(--sb-hover) !important; }
+section[data-testid="stSidebar"] .stRadio label > div:first-child { display: none !important; }
+section[data-testid="stSidebar"] .stRadio label:has(input:checked) {
+    background: var(--sb-active) !important;
+    border-color: rgba(59,130,246,0.4);
+    font-weight: 700 !important;
+}
+section[data-testid="stSidebar"] .stRadio label:has(input:checked)::before {
+    content: ''; position: absolute;
+    right: 0; top: 20%; bottom: 20%;
+    width: 3px; border-radius: 3px;
+    background: var(--sb-active-bar);
+}
+section[data-testid="stSidebar"] hr {
+    border: none; border-top: 1px solid var(--sb-border); margin: 14px 0;
+}
+
+.sb-footer {
+    text-align: center; font-size: 11.5px !important;
+    color: var(--sb-muted) !important;
+    padding: 14px 0 4px 0;
+    border-top: 1px solid var(--sb-border);
+    margin-top: 14px; line-height: 1.9;
+}
+.sb-footer .ver {
+    display: inline-block; padding: 3px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0a0f1c !important;
+    font-weight: 900 !important; font-size: 10.5px !important;
+}
+
+/* ===================== Logo ===================== */
+.school-logo { display: inline-flex; align-items: center; justify-content: center; border-radius: 14px; flex-shrink: 0; }
+.school-logo svg { width: 100%; height: 100%; display: block; }
+@keyframes brand-pulse {
+    0%, 100% { filter: drop-shadow(0 0 0 rgba(245,158,11,0)); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 14px rgba(245,158,11,0.55)) drop-shadow(0 0 26px rgba(59,130,246,0.35)); transform: scale(1.04); }
+}
+.brand-pulse { animation: brand-pulse 2.6s ease-in-out infinite; }
+
+/* ===================== Inputs ===================== */
+input, textarea,
+.stTextInput input, .stNumberInput input,
+.stDateInput input, .stTextArea textarea,
+.stTimeInput input, .stPasswordInput input {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    padding: 10px 14px !important;
+    direction: rtl !important;
+    text-align: right !important;
+}
+input::placeholder, textarea::placeholder { color: var(--faint) !important; font-weight: 500 !important; }
+input:focus, textarea:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 4px var(--primary-soft) !important;
+    outline: none !important;
+}
+div[data-baseweb="input"], div[data-baseweb="textarea"],
+div[data-baseweb="select"] > div {
+    background: var(--input-bg) !important;
+    color: var(--text) !important;
+    border-color: var(--input-border) !important;
+    border-radius: 10px !important;
+}
+div[data-baseweb="input"]:focus-within,
+div[data-baseweb="textarea"]:focus-within,
+div[data-baseweb="select"]:focus-within {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 4px var(--primary-soft) !important;
+}
+div[data-baseweb="select"] span, div[data-baseweb="select"] div {
+    color: var(--text) !important;
+    font-weight: 600 !important; font-size: 15px !important;
+}
+div[data-baseweb="popover"] ul, div[data-baseweb="popover"] [role="listbox"],
+div[data-baseweb="menu"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    direction: rtl !important;
+}
+div[data-baseweb="popover"] li, div[data-baseweb="menu"] li {
+    color: var(--text) !important;
+    font-size: 14.5px !important; font-weight: 600 !important;
+    padding: 10px 14px !important;
+}
+div[data-baseweb="popover"] li:hover, div[data-baseweb="menu"] li:hover { background: var(--primary-soft) !important; }
+
+/* ===================== Buttons ===================== */
+.stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
+    font-family: 'Cairo', sans-serif !important;
+    font-size: 14.5px !important; font-weight: 700 !important;
+    border-radius: 10px !important; padding: 9px 18px !important;
+    border: 1px solid var(--border-2) !important;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    transition: all .15s ease !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+.stButton > button:hover, .stFormSubmitButton > button:hover {
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
+    transform: translateY(-1px);
+}
+.stButton > button[kind="primary"],
+.stFormSubmitButton > button[kind="primary"] {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 6px 18px var(--primary-glow) !important;
+}
+.stButton > button[kind="primary"]:hover,
+.stFormSubmitButton > button[kind="primary"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px var(--primary-glow) !important;
+}
+
+/* ===================== Metrics ===================== */
+[data-testid="stMetric"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 16px 18px !important;
+    box-shadow: var(--shadow-sm);
+}
+[data-testid="stMetricLabel"] p {
+    color: var(--muted) !important;
+    font-weight: 700 !important; font-size: 13.5px !important;
+}
+[data-testid="stMetricValue"] {
+    color: var(--text) !important;
+    font-weight: 900 !important; font-size: 24px !important;
+}
+
+/* ===================== Tabs / Expander / Alerts ===================== */
+.stTabs [data-baseweb="tab-list"] { gap: 6px; border-bottom: 2px solid var(--border); }
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Cairo', sans-serif !important;
+    font-weight: 700 !important; font-size: 14.5px !important;
+    padding: 12px 20px !important;
+    color: var(--muted) !important;
+    border-radius: 10px 10px 0 0;
+    border-bottom: 2px solid transparent;
+}
+.stTabs [aria-selected="true"] {
+    color: var(--primary) !important;
+    border-bottom-color: var(--primary) !important;
+    background: var(--primary-soft) !important;
+}
+
+[data-testid="stExpander"] {
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    background: var(--surface) !important;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+[data-testid="stExpander"] summary {
+    font-weight: 700 !important; font-size: 14.5px !important;
+    color: var(--text) !important;
+    padding: 14px 18px !important;
+}
+[data-testid="stExpander"] summary p {
+    font-size: 14.5px !important; font-weight: 700 !important;
+    color: var(--text) !important;
+}
+[data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    background: var(--surface-2) !important;
+    padding: 16px 18px !important;
+}
+[data-testid="stAlert"] {
+    border-radius: 12px !important;
+    border: 1px solid var(--border) !important;
+    font-size: 14.5px !important; font-weight: 600 !important;
+}
+[data-testid="stAlert"] p { font-size: 14.5px !important; font-weight: 600 !important; }
+[data-testid="stForm"] {
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    padding: 22px !important;
+    background: var(--surface) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===================== Custom tables ===================== */
+.tbl-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+table.data-tbl { width: 100%; border-collapse: collapse; direction: rtl; }
+table.data-tbl thead th {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    font-size: 14.5px !important; font-weight: 800 !important;
+    padding: 14px 16px !important;
+    text-align: right !important;
+    border-bottom: 1.5px solid var(--border) !important;
+    white-space: nowrap;
+}
+table.data-tbl tbody td {
+    padding: 13px 16px !important;
+    font-size: 14.5px !important; font-weight: 600 !important;
+    color: var(--text-2) !important;
+    border-bottom: 1px solid var(--border) !important;
+    text-align: right !important;
+    line-height: 1.55;
+}
+table.data-tbl tbody tr:last-child td { border-bottom: none !important; }
+table.data-tbl tbody tr:hover td {
+    background: var(--primary-soft) !important;
+    color: var(--text) !important;
+}
+
+/* ===================== Chips ===================== */
+.chip {
+    display: inline-block; padding: 4px 12px;
+    border-radius: 999px; font-size: 12px !important;
+    font-weight: 800 !important; line-height: 1.5;
+}
+.chip.ok  { background: var(--success-soft); color: var(--success) !important; }
+.chip.no  { background: var(--danger-soft);  color: var(--danger) !important; }
+.chip.wrn { background: var(--warning-soft); color: var(--warning) !important; }
+.chip.inf { background: var(--primary-soft); color: var(--primary) !important; }
+.chip.gold { background: var(--accent-soft); color: var(--accent) !important; }
+.chip.mut { background: var(--surface-3); color: var(--muted) !important; }
+
+/* ===================== Page head / sections / stats ===================== */
+.page-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 4px 0 22px 0;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+.page-head .titles { display: flex; flex-direction: column; gap: 4px; }
+.page-head .title {
+    font-size: 24px; font-weight: 900; color: var(--text) !important;
+    letter-spacing: -0.01em; line-height: 1.2;
+}
+.page-head .sub {
+    font-size: 13.5px; color: var(--muted) !important;
+    font-weight: 600;
+}
+.page-head .badge {
+    font-size: 11.5px; font-weight: 800;
+    color: var(--accent) !important;
+    background: var(--accent-soft);
+    padding: 5px 14px; border-radius: 999px;
+    letter-spacing: .3px;
+    border: 1px solid rgba(245,158,11,0.25);
+}
+.section-title {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 17px; font-weight: 800; color: var(--text) !important;
+    margin: 26px 0 14px 0;
+}
+.section-title::before {
+    content: ''; width: 4px; height: 20px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--primary), var(--accent));
+}
+.stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex; align-items: center; gap: 16px;
+    transition: transform .15s ease, box-shadow .15s ease;
+    min-height: 84px;
+}
+.stat:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.stat .icon {
+    width: 48px; height: 48px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    background: var(--primary-soft); color: var(--primary);
+    flex-shrink: 0;
+}
+.stat .icon.success { background: var(--success-soft); color: var(--success); }
+.stat .icon.danger  { background: var(--danger-soft);  color: var(--danger); }
+.stat .icon.warning { background: var(--warning-soft); color: var(--warning); }
+.stat .icon.gold    { background: var(--accent-soft);  color: var(--accent); }
+.stat .icon.info    { background: var(--info-soft);    color: var(--info); }
+.stat .val {
+    font-size: 25px; font-weight: 900; color: var(--text) !important;
+    line-height: 1.1;
+}
+.stat .lbl {
+    font-size: 13.5px; color: var(--muted) !important;
+    font-weight: 700; margin-top: 4px;
+}
+.empty {
+    padding: 34px 22px; text-align: center;
+    color: var(--muted) !important;
+    background: var(--surface-2);
+    border: 1px dashed var(--border-2);
+    border-radius: 14px;
+    font-size: 14.5px; font-weight: 600;
+}
+
+/* ===================== Attendance row ===================== */
+.att-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    transition: border-color .15s ease, background .15s ease;
+}
+.att-row:hover { border-color: var(--border-2); }
+.att-row .code {
+    font-family: 'Cairo', monospace;
+    background: var(--primary-soft);
+    color: var(--primary) !important;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 800; font-size: 13px;
+    min-width: 82px; text-align: center;
+}
+.att-row .name {
+    flex: 1;
+    font-weight: 700; font-size: 15px;
+    color: var(--text) !important;
+}
+.att-row .grade {
+    color: var(--muted) !important;
+    font-size: 13px; font-weight: 600;
+    min-width: 60px;
+}
+
+/* Radio group in attendance row */
+.att-row-wrap [role="radiogroup"] {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    gap: 6px !important;
+    justify-content: flex-start !important;
+}
+.att-row-wrap [role="radiogroup"] label {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    gap: 6px !important;
+    align-items: center !important;
+    background: var(--surface-2) !important;
+    border: 1px solid var(--border) !important;
+    padding: 6px 12px !important;
+    border-radius: 10px !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    transition: all .12s ease !important;
+}
+.att-row-wrap [role="radiogroup"] label:hover {
+    border-color: var(--border-2) !important;
+}
+.att-row-wrap [role="radiogroup"] label p {
+    font-size: 13.5px !important; font-weight: 700 !important;
+    color: var(--text-2) !important;
+    margin: 0 !important;
+}
+.att-row-wrap [role="radiogroup"] label:has(input:checked) {
+    background: var(--primary-soft) !important;
+    border-color: var(--primary) !important;
+}
+.att-row-wrap [role="radiogroup"] label:has(input:checked) p {
+    color: var(--primary) !important;
+    font-weight: 800 !important;
+}
+/* Hide the radio circle */
+.att-row-wrap [role="radiogroup"] label > div:first-child {
+    display: none !important;
+}
+
+/* ===================== Login ===================== */
+.login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 38px 34px 30px 34px;
+    box-shadow: var(--shadow-lg);
+    position: relative; overflow: hidden;
+}
+.login-card::before {
+    content: ''; position: absolute; inset: 0 0 auto 0; height: 6px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+.login-brand { text-align: center; margin-bottom: 22px; }
+.login-brand .logo-wrap { display: inline-flex; margin-bottom: 16px; }
+.login-brand .t1 {
+    font-size: 24px; font-weight: 900; color: var(--text) !important;
+    letter-spacing: -0.01em;
+}
+.login-brand .t2 {
+    font-size: 13.5px; color: var(--muted) !important;
+    margin-top: 6px; font-weight: 600; line-height: 1.6;
+}
+.login-brand .t3 {
+    font-size: 12.5px; color: var(--faint) !important;
+    margin-top: 8px; font-weight: 600;
+}
+.login-foot {
+    text-align: center; font-size: 12px;
+    color: var(--faint) !important; margin-top: 18px; font-weight: 600;
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+@media (max-width: 900px) {
+    .block-container { padding-inline: 1rem !important; }
+    .page-head .title { font-size: 20px; }
+}
+</style>
+"""
+
+st.markdown(CSS, unsafe_allow_html=True)
 
 
 # ==========================================================
-# اللوجو SVG (متغير حسب الثيم)
+# اللوجو (سطر واحد، بدون مسافات بادئة)
 # ==========================================================
 def school_logo(size=48, pulse=False):
-    pulse_cls = "brand-pulse" if pulse else ""
-    return f"""
-    <div class="school-logo {pulse_cls}" style="width:{size}px;height:{size}px;">
-        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#3b82f6"/>
-                    <stop offset="55%" stop-color="#1e40af"/>
-                    <stop offset="100%" stop-color="#0f172a"/>
-                </linearGradient>
-                <linearGradient id="boltGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stop-color="#fde047"/>
-                    <stop offset="50%" stop-color="#facc15"/>
-                    <stop offset="100%" stop-color="#f59e0b"/>
-                </linearGradient>
-                <filter id="boltGlow" x="-30%" y="-30%" width="160%" height="160%">
-                    <feGaussianBlur stdDeviation="2.4" result="b"/>
-                    <feMerge>
-                        <feMergeNode in="b"/>
-                        <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                </filter>
-            </defs>
-            <path d="M60,8 L108,24 L108,60 C108,88 88,108 60,116 C32,108 12,88 12,60 L12,24 Z"
-                  fill="url(#shieldGrad)"/>
-            <path d="M60,15 L100,29 L100,60 C100,84 83,101 60,108 C37,101 20,84 20,60 L20,29 Z"
-                  fill="none" stroke="#fbbf24" stroke-width="1.2" opacity="0.65"/>
-            <path d="M66,28 L38,62 L54,62 L50,92 L84,54 L66,54 Z"
-                  fill="url(#boltGrad)" filter="url(#boltGlow)"/>
-        </svg>
-    </div>
-    """
-
-
-# ==========================================================
-# CSS كامل حسب الثيم
-# ==========================================================
-def build_css(theme):
-    if theme == "dark":
-        t = """
-            --bg: #0a0f1c;
-            --bg-2: #060912;
-            --surface: #101828;
-            --surface-2: #0d1523;
-            --surface-3: #17213a;
-            --border: #1e2a44;
-            --border-2: #2a3a5c;
-            --text: #f1f5fb;
-            --text-2: #cbd5e6;
-            --muted: #8ea0bf;
-            --faint: #5e6f8e;
-            --primary: #3b82f6;
-            --primary-2: #60a5fa;
-            --primary-soft: rgba(59,130,246,0.16);
-            --primary-glow: rgba(59,130,246,0.4);
-            --accent: #f59e0b;
-            --accent-2: #fbbf24;
-            --accent-soft: rgba(245,158,11,0.16);
-            --success: #22c55e;
-            --success-soft: rgba(34,197,94,0.14);
-            --danger: #ef4444;
-            --danger-soft: rgba(239,68,68,0.14);
-            --warning: #f97316;
-            --warning-soft: rgba(249,115,22,0.14);
-            --info: #06b6d4;
-            --info-soft: rgba(6,182,212,0.14);
-            --sb-bg: #050810;
-            --sb-bg-2: #0a1224;
-            --sb-text: #e8eefc;
-            --sb-muted: #8494b6;
-            --sb-border: rgba(255,255,255,0.07);
-            --sb-hover: rgba(59,130,246,0.15);
-            --sb-active: rgba(59,130,246,0.22);
-            --sb-active-bar: #fbbf24;
-            --input-bg: #0d1523;
-            --input-border: #1e2a44;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
-            --shadow: 0 6px 20px rgba(0,0,0,0.45);
-            --shadow-lg: 0 18px 45px rgba(0,0,0,0.55);
-            --color-scheme: dark;
-        """
-    else:
-        t = """
-            --bg: #f7f9fd;
-            --bg-2: #eef2f9;
-            --surface: #ffffff;
-            --surface-2: #f4f7fc;
-            --surface-3: #eaf0fa;
-            --border: #e2e8f2;
-            --border-2: #cfd8e8;
-            --text: #0f172a;
-            --text-2: #2b3851;
-            --muted: #64748b;
-            --faint: #94a3b8;
-            --primary: #1e40af;
-            --primary-2: #3b82f6;
-            --primary-soft: #eaf1ff;
-            --primary-glow: rgba(30,64,175,0.25);
-            --accent: #d97706;
-            --accent-2: #f59e0b;
-            --accent-soft: #fef3c7;
-            --success: #16a34a;
-            --success-soft: #dcfce7;
-            --danger: #dc2626;
-            --danger-soft: #fee2e2;
-            --warning: #ea580c;
-            --warning-soft: #ffedd5;
-            --info: #0891b2;
-            --info-soft: #cffafe;
-            --sb-bg: #0b1729;
-            --sb-bg-2: #122340;
-            --sb-text: #eaf0fb;
-            --sb-muted: #94a5c4;
-            --sb-border: rgba(255,255,255,0.08);
-            --sb-hover: rgba(59,130,246,0.22);
-            --sb-active: rgba(59,130,246,0.32);
-            --sb-active-bar: #fbbf24;
-            --input-bg: #ffffff;
-            --input-border: #d4dcec;
-            --shadow-sm: 0 1px 2px rgba(15,23,42,0.04);
-            --shadow: 0 6px 18px rgba(15,23,42,0.08);
-            --shadow-lg: 0 18px 45px rgba(15,23,42,0.14);
-            --color-scheme: light;
-        """
-
-    return f"""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
-
-    :root {{
-        {t}
-    }}
-
-    /* ========================================================
-       Base
-    ======================================================== */
-    html, body, [class*="css"], .stApp, .stApp * {{
-        font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        text-rendering: optimizeLegibility;
-    }}
-    html, body {{ font-size: 15.5px !important; }}
-
-    .stApp {{ background: var(--bg) !important; color: var(--text) !important; }}
-
-    /* كل عنصر نصي يأخذ لون الثيم */
-    p, span, li, td, th, .stMarkdown, .stText, .stCaption,
-    [data-testid="stMarkdownContainer"] *,
-    [data-testid="stCaptionContainer"] *,
-    [data-testid="stWidgetLabel"] * {{
-        color: var(--text-2) !important;
-    }}
-    h1, h2, h3, h4, h5, h6, strong, b {{
-        color: var(--text) !important;
-        font-weight: 800 !important;
-    }}
-    h1 {{ font-size: 26px !important; font-weight: 900 !important; }}
-    h2 {{ font-size: 22px !important; }}
-    h3 {{ font-size: 19px !important; }}
-
-    [data-testid="stWidgetLabel"] p,
-    label[data-baseweb="form-control-label"],
-    .stTextInput label, .stSelectbox label,
-    .stNumberInput label, .stDateInput label, .stTextArea label {{
-        color: var(--text) !important;
-        font-size: 14.5px !important;
-        font-weight: 700 !important;
-    }}
-
-    /* ========================================================
-       Layout — Sidebar on the RIGHT (battle-tested)
-    ======================================================== */
-    [data-testid="stAppViewContainer"] {{
-        display: flex !important;
-        flex-direction: row !important;
-        background: var(--bg) !important;
-    }}
-
-    /* Sidebar → RIGHT */
-    [data-testid="stAppViewContainer"] > section[data-testid="stSidebar"] {{
-        order: 2 !important;
-        flex: 0 0 280px !important;
-        width: 280px !important;
-        min-width: 280px !important;
-        max-width: 280px !important;
-        background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-2) 100%) !important;
-        border-left: 1px solid var(--sb-border) !important;
-        border-right: none !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }}
-
-    /* Main → LEFT */
-    [data-testid="stAppViewContainer"] > [data-testid="stMain"],
-    [data-testid="stAppViewContainer"] > section.main,
-    [data-testid="stAppViewContainer"] > .main {{
-        order: 1 !important;
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        direction: rtl !important;
-        background: var(--bg) !important;
-    }}
-
-    section[data-testid="stSidebar"] * {{
-        color: var(--sb-text) !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }}
-
-    /* إخفاء زر الطي الافتراضي */
-    section[data-testid="stSidebar"] [data-testid="stSidebarHeader"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
-    section[data-testid="stSidebar"] button[kind="header"],
-    section[data-testid="stSidebar"] button[kind="headerNoPadding"] {{
-        display: none !important;
-        visibility: hidden !important;
-    }}
-
-    /* زر فتح الشريط بعد الطي — يظهر على يمين الصفحة */
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="stSidebarNavCollapseButton"],
-    [data-testid="collapsedControl"] {{
-        position: fixed !important;
-        top: 16px !important;
-        right: 16px !important;
-        left: auto !important;
-        z-index: 99999 !important;
-        direction: ltr !important;
-    }}
-    [data-testid="stSidebarCollapsedControl"] button,
-    [data-testid="collapsedControl"] button {{
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        box-shadow: var(--shadow) !important;
-        border-radius: 12px !important;
-        width: 44px !important;
-        height: 44px !important;
-        color: var(--primary) !important;
-    }}
-    [data-testid="stSidebarCollapsedControl"] svg,
-    [data-testid="collapsedControl"] svg {{
-        fill: var(--primary) !important;
-        color: var(--primary) !important;
-    }}
-
-    /* إخفاء شرائط Streamlit */
-    #MainMenu, footer, [data-testid="stToolbar"],
-    [data-testid="stDecoration"], [data-testid="stStatusWidget"] {{
-        display: none !important;
-    }}
-    header[data-testid="stHeader"] {{
-        background: transparent !important;
-        height: 0 !important;
-    }}
-
-    .block-container {{
-        padding-top: 1.5rem !important;
-        padding-bottom: 2.5rem !important;
-        padding-inline: 2rem !important;
-        max-width: 1500px !important;
-    }}
-
-    /* ========================================================
-       Sidebar content
-    ======================================================== */
-    .sb-brand {{
-        display: flex; align-items: center; gap: 12px;
-        padding: 8px 2px 16px 2px;
-        border-bottom: 1px solid var(--sb-border);
-        margin-bottom: 14px;
-    }}
-    .sb-brand .brand-text {{ display: flex; flex-direction: column; }}
-    .sb-brand .name {{
-        font-weight: 900 !important; font-size: 17px !important;
-        color: var(--sb-text) !important; line-height: 1.15;
-    }}
-    .sb-brand .tag {{
-        font-size: 11.5px !important; color: var(--sb-muted) !important;
-        font-weight: 600 !important; margin-top: 3px;
-    }}
-
-    .sb-user {{
-        background: rgba(255,255,255,0.045);
-        border: 1px solid var(--sb-border);
-        border-radius: 14px;
-        padding: 13px 14px;
-        margin-bottom: 12px;
-    }}
-    .sb-user .n {{
-        font-weight: 800 !important; font-size: 15px !important;
-        color: var(--sb-text) !important;
-    }}
-    .sb-user .r {{
-        display: inline-block; margin-top: 6px;
-        font-size: 11.5px !important; color: #c7d2fe !important;
-        font-weight: 700 !important;
-        background: rgba(59,130,246,0.25);
-        padding: 3px 10px; border-radius: 999px;
-    }}
-    .sb-user .e {{
-        font-size: 11.5px !important; color: var(--sb-muted) !important;
-        margin-top: 8px; direction: ltr; text-align: right; word-break: break-all;
-    }}
-
-    section[data-testid="stSidebar"] [role="radiogroup"] {{
-        gap: 4px; display: flex; flex-direction: column;
-    }}
-    section[data-testid="stSidebar"] .stRadio > label:first-child {{ display: none !important; }}
-    section[data-testid="stSidebar"] .stRadio label {{
-        display: flex !important;
-        flex-direction: row-reverse !important;
-        justify-content: flex-start !important;
-        align-items: center; gap: 10px;
-        padding: 11px 14px !important;
-        margin: 0 !important;
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        font-size: 15px !important;
-        cursor: pointer;
-        border: 1px solid transparent;
-        transition: all .15s ease;
-        color: var(--sb-text) !important;
-        position: relative;
-    }}
-    section[data-testid="stSidebar"] .stRadio label p {{
-        font-size: 15px !important; font-weight: 600 !important;
-        color: var(--sb-text) !important;
-    }}
-    section[data-testid="stSidebar"] .stRadio label:hover {{
-        background: var(--sb-hover) !important;
-    }}
-    section[data-testid="stSidebar"] .stRadio label > div:first-child {{
-        display: none !important;
-    }}
-    section[data-testid="stSidebar"] .stRadio label:has(input:checked) {{
-        background: var(--sb-active) !important;
-        border-color: rgba(59,130,246,0.4);
-        font-weight: 700 !important;
-    }}
-    section[data-testid="stSidebar"] .stRadio label:has(input:checked)::before {{
-        content: ''; position: absolute;
-        right: 0; top: 20%; bottom: 20%;
-        width: 3px; border-radius: 3px;
-        background: var(--sb-active-bar);
-    }}
-
-    section[data-testid="stSidebar"] hr {{
-        border: none; border-top: 1px solid var(--sb-border);
-        margin: 14px 0;
-    }}
-
-    .sb-footer {{
-        text-align: center; font-size: 11.5px !important;
-        color: var(--sb-muted) !important;
-        padding: 14px 0 4px 0;
-        border-top: 1px solid var(--sb-border);
-        margin-top: 14px; line-height: 1.9;
-    }}
-    .sb-footer .ver {{
-        display: inline-block; padding: 3px 12px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
-        color: #0a0f1c !important;
-        font-weight: 900 !important; font-size: 10.5px !important;
-    }}
-
-    /* ========================================================
-       School logo + pulse
-    ======================================================== */
-    .school-logo {{
-        display: inline-flex; align-items: center; justify-content: center;
-        border-radius: 14px; flex-shrink: 0;
-    }}
-    .school-logo svg {{ width: 100%; height: 100%; display: block; }}
-
-    @keyframes brand-pulse {{
-        0%, 100% {{
-            filter: drop-shadow(0 0 0 rgba(245,158,11,0));
-            transform: scale(1);
-        }}
-        50% {{
-            filter: drop-shadow(0 0 14px rgba(245,158,11,0.55))
-                    drop-shadow(0 0 26px rgba(59,130,246,0.35));
-            transform: scale(1.04);
-        }}
-    }}
-    .brand-pulse {{ animation: brand-pulse 2.6s ease-in-out infinite; }}
-
-    /* ========================================================
-       Inputs
-    ======================================================== */
-    input, textarea,
-    .stTextInput input, .stNumberInput input,
-    .stDateInput input, .stTextArea textarea,
-    .stTimeInput input, .stPasswordInput input {{
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border: 1px solid var(--input-border) !important;
-        border-radius: 10px !important;
-        font-size: 15px !important;
-        font-weight: 600 !important;
-        padding: 10px 14px !important;
-        direction: rtl !important;
-        text-align: right !important;
-    }}
-    input::placeholder, textarea::placeholder {{
-        color: var(--faint) !important; font-weight: 500 !important;
-    }}
-    input:focus, textarea:focus {{
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 4px var(--primary-soft) !important;
-        outline: none !important;
-    }}
-
-    div[data-baseweb="input"], div[data-baseweb="textarea"],
-    div[data-baseweb="select"] > div {{
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border-color: var(--input-border) !important;
-        border-radius: 10px !important;
-    }}
-    div[data-baseweb="input"]:focus-within,
-    div[data-baseweb="textarea"]:focus-within,
-    div[data-baseweb="select"]:focus-within {{
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 4px var(--primary-soft) !important;
-    }}
-    div[data-baseweb="select"] span, div[data-baseweb="select"] div {{
-        color: var(--text) !important;
-        font-weight: 600 !important; font-size: 15px !important;
-    }}
-
-    div[data-baseweb="popover"] ul, div[data-baseweb="popover"] [role="listbox"],
-    div[data-baseweb="menu"] {{
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        direction: rtl !important;
-    }}
-    div[data-baseweb="popover"] li, div[data-baseweb="menu"] li {{
-        color: var(--text) !important;
-        font-size: 14.5px !important; font-weight: 600 !important;
-        padding: 10px 14px !important;
-    }}
-    div[data-baseweb="popover"] li:hover, div[data-baseweb="menu"] li:hover {{
-        background: var(--primary-soft) !important;
-    }}
-
-    /* ========================================================
-       Buttons
-    ======================================================== */
-    .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {{
-        font-family: 'Cairo', sans-serif !important;
-        font-size: 14.5px !important; font-weight: 700 !important;
-        border-radius: 10px !important; padding: 9px 18px !important;
-        border: 1px solid var(--border-2) !important;
-        background: var(--surface) !important;
-        color: var(--text) !important;
-        transition: all .15s ease !important;
-        box-shadow: var(--shadow-sm) !important;
-    }}
-    .stButton > button:hover, .stFormSubmitButton > button:hover {{
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-        transform: translateY(-1px);
-    }}
-    .stButton > button[kind="primary"],
-    .stFormSubmitButton > button[kind="primary"] {{
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%) !important;
-        color: #ffffff !important;
-        border: none !important;
-        box-shadow: 0 6px 18px var(--primary-glow) !important;
-    }}
-    .stButton > button[kind="primary"]:hover,
-    .stFormSubmitButton > button[kind="primary"]:hover {{
-        transform: translateY(-1px);
-        box-shadow: 0 10px 26px var(--primary-glow) !important;
-    }}
-
-    /* Toggle switch */
-    [data-testid="stToggle"] label {{ color: var(--sb-text) !important; font-weight: 700 !important; }}
-    [data-baseweb="checkbox"] [role="checkbox"] {{
-        background: var(--surface-3) !important;
-        border-color: var(--border-2) !important;
-    }}
-
-    /* ========================================================
-       Metrics
-    ======================================================== */
-    [data-testid="stMetric"] {{
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 16px !important;
-        padding: 16px 18px !important;
-        box-shadow: var(--shadow-sm);
-    }}
-    [data-testid="stMetricLabel"] p {{
-        color: var(--muted) !important;
-        font-weight: 700 !important; font-size: 13.5px !important;
-    }}
-    [data-testid="stMetricValue"] {{
-        color: var(--text) !important;
-        font-weight: 900 !important; font-size: 24px !important;
-    }}
-
-    /* ========================================================
-       Tabs
-    ======================================================== */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 6px; border-bottom: 2px solid var(--border);
-    }}
-    .stTabs [data-baseweb="tab"] {{
-        font-family: 'Cairo', sans-serif !important;
-        font-weight: 700 !important; font-size: 14.5px !important;
-        padding: 12px 20px !important;
-        color: var(--muted) !important;
-        border-radius: 10px 10px 0 0;
-        border-bottom: 2px solid transparent;
-    }}
-    .stTabs [aria-selected="true"] {{
-        color: var(--primary) !important;
-        border-bottom-color: var(--primary) !important;
-        background: var(--primary-soft) !important;
-    }}
-
-    /* ========================================================
-       Expander
-    ======================================================== */
-    [data-testid="stExpander"] {{
-        border: 1px solid var(--border) !important;
-        border-radius: 14px !important;
-        background: var(--surface) !important;
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-    }}
-    [data-testid="stExpander"] summary {{
-        font-weight: 700 !important; font-size: 14.5px !important;
-        color: var(--text) !important;
-        padding: 14px 18px !important;
-    }}
-    [data-testid="stExpander"] summary p {{
-        font-size: 14.5px !important; font-weight: 700 !important;
-        color: var(--text) !important;
-    }}
-    [data-testid="stExpander"] [data-testid="stExpanderDetails"] {{
-        background: var(--surface-2) !important;
-        padding: 16px 18px !important;
-    }}
-
-    /* ========================================================
-       Alerts / Forms
-    ======================================================== */
-    [data-testid="stAlert"] {{
-        border-radius: 12px !important;
-        border: 1px solid var(--border) !important;
-        font-size: 14.5px !important;
-        font-weight: 600 !important;
-    }}
-    [data-testid="stAlert"] p {{ font-size: 14.5px !important; font-weight: 600 !important; }}
-
-    [data-testid="stForm"] {{
-        border: 1px solid var(--border) !important;
-        border-radius: 16px !important;
-        padding: 22px !important;
-        background: var(--surface) !important;
-        box-shadow: var(--shadow-sm);
-    }}
-
-    /* ========================================================
-       DataEditor — force color-scheme
-    ======================================================== */
-    [data-testid="stDataFrame"], [data-testid="stDataEditor"] {{
-        color-scheme: var(--color-scheme) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        overflow: hidden;
-    }}
-
-    /* ========================================================
-       Custom tables (used instead of st.dataframe)
-    ======================================================== */
-    .tbl-wrap {{
-        overflow-x: auto;
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        background: var(--surface);
-        box-shadow: var(--shadow-sm);
-    }}
-    table.data-tbl {{
-        width: 100%; border-collapse: collapse;
-        direction: rtl; min-width: 100%;
-    }}
-    table.data-tbl thead th {{
-        background: var(--surface-2) !important;
-        color: var(--text) !important;
-        font-size: 14.5px !important;
-        font-weight: 800 !important;
-        padding: 14px 16px !important;
-        text-align: right !important;
-        border-bottom: 1.5px solid var(--border) !important;
-        white-space: nowrap;
-        letter-spacing: -0.005em;
-    }}
-    table.data-tbl tbody td {{
-        padding: 13px 16px !important;
-        font-size: 14.5px !important;
-        font-weight: 600 !important;
-        color: var(--text-2) !important;
-        border-bottom: 1px solid var(--border) !important;
-        text-align: right !important;
-        line-height: 1.55;
-    }}
-    table.data-tbl tbody tr:last-child td {{ border-bottom: none !important; }}
-    table.data-tbl tbody tr:hover td {{
-        background: var(--primary-soft) !important;
-        color: var(--text) !important;
-    }}
-    table.data-tbl tbody tr:hover td * {{ color: var(--text) !important; }}
-
-    /* chips */
-    .chip {{
-        display: inline-block; padding: 4px 12px;
-        border-radius: 999px; font-size: 12px !important;
-        font-weight: 800 !important; line-height: 1.5;
-        letter-spacing: -0.005em;
-    }}
-    .chip.ok  {{ background: var(--success-soft); color: var(--success) !important; }}
-    .chip.no  {{ background: var(--danger-soft);  color: var(--danger) !important; }}
-    .chip.wrn {{ background: var(--warning-soft); color: var(--warning) !important; }}
-    .chip.inf {{ background: var(--primary-soft); color: var(--primary) !important; }}
-    .chip.gold {{ background: var(--accent-soft); color: var(--accent) !important; }}
-    .chip.mut {{ background: var(--surface-3); color: var(--muted) !important; }}
-
-    /* ========================================================
-       Page head / section title / stat
-    ======================================================== */
-    .page-head {{
-        display: flex; align-items: center; justify-content: space-between;
-        margin: 4px 0 22px 0;
-        padding-bottom: 18px;
-        border-bottom: 1px solid var(--border);
-    }}
-    .page-head .titles {{ display: flex; flex-direction: column; gap: 4px; }}
-    .page-head .title {{
-        font-size: 24px; font-weight: 900; color: var(--text) !important;
-        letter-spacing: -0.01em; line-height: 1.2;
-    }}
-    .page-head .sub {{
-        font-size: 13.5px; color: var(--muted) !important;
-        font-weight: 600;
-    }}
-    .page-head .badge {{
-        font-size: 11.5px; font-weight: 800;
-        color: var(--accent) !important;
-        background: var(--accent-soft);
-        padding: 5px 14px; border-radius: 999px;
-        letter-spacing: .3px;
-        border: 1px solid rgba(245,158,11,0.25);
-    }}
-
-    .section-title {{
-        display: flex; align-items: center; gap: 12px;
-        font-size: 17px; font-weight: 800; color: var(--text) !important;
-        margin: 26px 0 14px 0;
-    }}
-    .section-title::before {{
-        content: ''; width: 4px; height: 20px; border-radius: 2px;
-        background: linear-gradient(180deg, var(--primary), var(--accent));
-    }}
-
-    .stat {{
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 18px 20px;
-        box-shadow: var(--shadow-sm);
-        display: flex; align-items: center; gap: 16px;
-        transition: transform .15s ease, box-shadow .15s ease;
-        min-height: 84px;
-    }}
-    .stat:hover {{ transform: translateY(-2px); box-shadow: var(--shadow); }}
-    .stat .icon {{
-        width: 48px; height: 48px; border-radius: 13px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 22px;
-        background: var(--primary-soft); color: var(--primary);
-        flex-shrink: 0;
-    }}
-    .stat .icon.success {{ background: var(--success-soft); color: var(--success); }}
-    .stat .icon.danger  {{ background: var(--danger-soft);  color: var(--danger); }}
-    .stat .icon.warning {{ background: var(--warning-soft); color: var(--warning); }}
-    .stat .icon.gold    {{ background: var(--accent-soft);  color: var(--accent); }}
-    .stat .icon.info    {{ background: var(--info-soft);    color: var(--info); }}
-    .stat .val {{
-        font-size: 25px; font-weight: 900; color: var(--text) !important;
-        line-height: 1.1; letter-spacing: -0.01em;
-    }}
-    .stat .lbl {{
-        font-size: 13.5px; color: var(--muted) !important;
-        font-weight: 700; margin-top: 4px;
-    }}
-
-    .empty {{
-        padding: 34px 22px; text-align: center;
-        color: var(--muted) !important;
-        background: var(--surface-2);
-        border: 1px dashed var(--border-2);
-        border-radius: 14px;
-        font-size: 14.5px; font-weight: 600;
-    }}
-
-    /* ========================================================
-       Login
-    ======================================================== */
-    .login-card {{
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 22px;
-        padding: 38px 34px 30px 34px;
-        box-shadow: var(--shadow-lg);
-        position: relative; overflow: hidden;
-    }}
-    .login-card::before {{
-        content: ''; position: absolute; inset: 0 0 auto 0; height: 6px;
-        background: linear-gradient(90deg, var(--primary), var(--accent));
-    }}
-    .login-brand {{ text-align: center; margin-bottom: 22px; }}
-    .login-brand .logo-wrap {{
-        display: inline-flex; margin-bottom: 16px;
-    }}
-    .login-brand .t1 {{
-        font-size: 24px; font-weight: 900; color: var(--text) !important;
-        letter-spacing: -0.01em;
-    }}
-    .login-brand .t2 {{
-        font-size: 13.5px; color: var(--muted) !important;
-        margin-top: 6px; font-weight: 600; line-height: 1.6;
-    }}
-    .login-brand .t3 {{
-        font-size: 12.5px; color: var(--faint) !important;
-        margin-top: 8px; font-weight: 600;
-    }}
-    .login-foot {{
-        text-align: center; font-size: 12px;
-        color: var(--faint) !important; margin-top: 18px; font-weight: 600;
-    }}
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {{ width: 9px; height: 9px; }}
-    ::-webkit-scrollbar-track {{ background: transparent; }}
-    ::-webkit-scrollbar-thumb {{
-        background: var(--border-2); border-radius: 6px;
-    }}
-    ::-webkit-scrollbar-thumb:hover {{ background: var(--muted); }}
-
-    @media (max-width: 900px) {{
-        .block-container {{ padding-inline: 1rem !important; }}
-        .page-head .title {{ font-size: 20px; }}
-    }}
-    </style>
-    """
-
-
-st.markdown(build_css(st.session_state.theme), unsafe_allow_html=True)
+    cls = "brand-pulse" if pulse else ""
+    return (
+        f"<div class='school-logo {cls}' style='width:{size}px;height:{size}px;'>"
+        "<svg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'>"
+        "<defs>"
+        "<linearGradient id='sg' x1='0%' y1='0%' x2='100%' y2='100%'>"
+        "<stop offset='0%' stop-color='#3b82f6'/>"
+        "<stop offset='55%' stop-color='#1e40af'/>"
+        "<stop offset='100%' stop-color='#0f172a'/>"
+        "</linearGradient>"
+        "<linearGradient id='bg' x1='0%' y1='0%' x2='0%' y2='100%'>"
+        "<stop offset='0%' stop-color='#fde047'/>"
+        "<stop offset='50%' stop-color='#facc15'/>"
+        "<stop offset='100%' stop-color='#f59e0b'/>"
+        "</linearGradient>"
+        "</defs>"
+        "<path d='M60,8 L108,24 L108,60 C108,88 88,108 60,116 C32,108 12,88 12,60 L12,24 Z' fill='url(#sg)'/>"
+        "<path d='M60,15 L100,29 L100,60 C100,84 83,101 60,108 C37,101 20,84 20,60 L20,29 Z' fill='none' stroke='#fbbf24' stroke-width='1.2' opacity='0.65'/>"
+        "<path d='M66,28 L38,62 L54,62 L50,92 L84,54 L66,54 Z' fill='url(#bg)'/>"
+        "</svg>"
+        "</div>"
+    )
 
 
 # ==========================================================
@@ -843,10 +732,9 @@ def build_attendance(seed, days=21):
     today = date.today()
     for i in range(days):
         d = today - timedelta(days=i)
-        if d.weekday() == 4:
-            continue
+        if d.weekday() == 4: continue
         res[d.isoformat()] = rnd.choices(
-            ["حاضر", "غائب", "متأخر"], weights=[80, 10, 10]
+            ATT_OPTIONS, weights=[80, 10, 10]
         )[0]
     return res
 
@@ -898,7 +786,7 @@ def gen_demo_sessions(teachers):
 
 
 # ==========================================================
-# رندر جدول HTML
+# جدول HTML
 # ==========================================================
 def data_table(headers, rows):
     thead = "".join(f"<th>{h}</th>" for h in headers)
@@ -916,37 +804,30 @@ def data_table(headers, rows):
             else:
                 cells += f"<td>{cs}</td>"
         body += f"<tr>{cells}</tr>"
-    st.markdown(
-        f"<div class='tbl-wrap'><table class='data-tbl'>"
+    html = (
+        "<div class='tbl-wrap'><table class='data-tbl'>"
         f"<thead><tr>{thead}</tr></thead><tbody>{body}</tbody>"
-        f"</table></div>",
-        unsafe_allow_html=True,
+        "</table></div>"
     )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 # ==========================================================
-# مكونات موحدة
+# مكونات موحدة — ملاحظة: كل HTML بسطر واحد بدون مسافات بادئة
 # ==========================================================
 def page_head(title, subtitle="", badge=""):
     b = f"<span class='badge'>{badge}</span>" if badge else ""
     s = f"<span class='sub'>{subtitle}</span>" if subtitle else ""
-    st.markdown(
-        f"<div class='page-head'><div class='titles'>"
-        f"<span class='title'>{title}</span>{s}</div>{b}</div>",
-        unsafe_allow_html=True,
-    )
+    html = f"<div class='page-head'><div class='titles'><span class='title'>{title}</span>{s}</div>{b}</div>"
+    st.markdown(html, unsafe_allow_html=True)
 
 def section(title):
     st.markdown(f"<div class='section-title'>{title}</div>", unsafe_allow_html=True)
 
 def stat(icon, label, value, tone=""):
     cls = f"icon {tone}".strip()
-    st.markdown(
-        f"<div class='stat'><div class='{cls}'>{icon}</div>"
-        f"<div><div class='val'>{value}</div>"
-        f"<div class='lbl'>{label}</div></div></div>",
-        unsafe_allow_html=True,
-    )
+    html = f"<div class='stat'><div class='{cls}'>{icon}</div><div><div class='val'>{value}</div><div class='lbl'>{label}</div></div></div>"
+    st.markdown(html, unsafe_allow_html=True)
 
 def empty_state(text):
     st.markdown(f"<div class='empty'>{text}</div>", unsafe_allow_html=True)
@@ -956,9 +837,9 @@ def empty_state(text):
 # تهيئة البيانات
 # ==========================================================
 def init_data():
-    if st.session_state.get("_init_v3"):
+    if st.session_state.get("_init_v31"):
         return
-    st.session_state._init_v3 = True
+    st.session_state._init_v31 = True
 
     st.session_state.logged_in = False
     st.session_state.user_id = None
@@ -1056,35 +937,26 @@ def init_data():
 # صفحة الدخول
 # ==========================================================
 def login_page():
-    # زر الثيم أعلى اليسار
-    tc1, tc2 = st.columns([5, 1])
-    with tc2:
-        is_dark = st.session_state.theme == "dark"
-        new_dark = st.toggle("🌙 الوضع الداكن", value=is_dark, key="login_theme")
-        if new_dark != is_dark:
-            st.session_state.theme = "dark" if new_dark else "light"
-            st.rerun()
-
     st.markdown("<div style='height:4vh'></div>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 1.15, 1])
     with c2:
-        st.markdown(
-            f"""
-            <div class='login-card'>
-                <div class='login-brand'>
-                    <div class='logo-wrap'>{school_logo(78, pulse=True)}</div>
-                    <div class='t1'>{APP_FULL}</div>
-                    <div class='t2'>{APP_FIELD} — التعليم والتدريب المزدوج</div>
-                    <div class='t3'>{APP_LOCATION}</div>
-                </div>
-            """,
-            unsafe_allow_html=True,
+        brand_html = (
+            "<div class='login-card'>"
+            "<div class='login-brand'>"
+            f"<div class='logo-wrap'>{school_logo(78, pulse=True)}</div>"
+            f"<div class='t1'>{APP_FULL}</div>"
+            f"<div class='t2'>{APP_FIELD} — التعليم والتدريب المزدوج</div>"
+            f"<div class='t3'>{APP_LOCATION}</div>"
+            "</div></div>"
         )
+        st.markdown(brand_html, unsafe_allow_html=True)
+
         with st.form("login_form", clear_on_submit=False):
             identifier = st.text_input("اسم المستخدم أو البريد الإلكتروني")
             password = st.text_input("كلمة المرور", type="password")
-            ok = st.form_submit_button("تسجيل الدخول", use_container_width=True, type="primary")
-        st.markdown("</div>", unsafe_allow_html=True)
+            ok = st.form_submit_button("تسجيل الدخول",
+                                       use_container_width=True, type="primary")
+
         st.markdown(
             f"<div class='login-foot'>الإصدار {APP_VERSION}</div>",
             unsafe_allow_html=True,
@@ -1118,29 +990,22 @@ def login_page():
 def render_sidebar():
     role = st.session_state.role
     with st.sidebar:
-        st.markdown(
-            f"""
-            <div class='sb-brand'>
-                {school_logo(46, pulse=True)}
-                <div class='brand-text'>
-                    <div class='name'>{APP_NAME}</div>
-                    <div class='tag'>تعليم وتدريب مزدوج</div>
-                </div>
-            </div>
-            <div class='sb-user'>
-                <div class='n'>👤 {st.session_state.display_name}</div>
-                <div class='r'>{ROLES.get(role, role)}</div>
-                <div class='e'>{st.session_state.email}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        brand_html = (
+            "<div class='sb-brand'>"
+            f"{school_logo(46, pulse=True)}"
+            "<div class='brand-text'>"
+            f"<div class='name'>{APP_NAME}</div>"
+            "<div class='tag'>تعليم وتدريب مزدوج</div>"
+            "</div></div>"
         )
-
-        is_dark = st.session_state.theme == "dark"
-        new_dark = st.toggle("🌙 الوضع الداكن", value=is_dark, key="sb_theme")
-        if new_dark != is_dark:
-            st.session_state.theme = "dark" if new_dark else "light"
-            st.rerun()
+        user_html = (
+            "<div class='sb-user'>"
+            f"<div class='n'>👤 {st.session_state.display_name}</div>"
+            f"<div class='r'>{ROLES.get(role, role)}</div>"
+            f"<div class='e'>{st.session_state.email}</div>"
+            "</div>"
+        )
+        st.markdown(brand_html + user_html, unsafe_allow_html=True)
 
         if role == "admin":
             pages = ["لوحة التحكم", "ملف المدير", "الطلاب", "المدرسون",
@@ -1160,15 +1025,13 @@ def render_sidebar():
         choice_label = st.radio("nav", labels, label_visibility="collapsed")
         choice = pages[labels.index(choice_label)]
 
-        st.markdown(
-            f"""
-            <div class='sb-footer'>
-                <span class='ver'>v {APP_VERSION}</span>
-                <div style='margin-top:8px;'>{APP_NAME} © {date.today().year}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        footer_html = (
+            "<div class='sb-footer'>"
+            f"<span class='ver'>v {APP_VERSION}</span>"
+            f"<div style='margin-top:8px;'>{APP_NAME} © {date.today().year}</div>"
+            "</div>"
         )
+        st.markdown(footer_html, unsafe_allow_html=True)
 
         if st.button("🚪  تسجيل الخروج", use_container_width=True, key="logout"):
             for k in ["logged_in", "user_id", "role", "display_name",
@@ -1542,7 +1405,7 @@ def page_sessions():
 
 
 # ==========================================================
-# الحضور والغياب
+# الحضور والغياب — واجهة مخصصة (لا data_editor)
 # ==========================================================
 def page_attendance():
     page_head("الحضور والغياب", "تسجيل الحضور اليومي للطلاب")
@@ -1557,34 +1420,70 @@ def page_attendance():
     dstr = sel_date.isoformat()
     filtered = students if gr == "الكل" else [s for s in students if s.get("grade") == gr]
 
+    if not filtered:
+        empty_state("لا يوجد طلاب في هذا الصف.")
+        return
+
     section("تسجيل الحضور")
-    mark_all = st.radio("إجراء سريع",
-                        ["بدون", "الكل حاضر", "الكل غائب"],
-                        horizontal=True, label_visibility="collapsed")
 
-    df = pd.DataFrame([{"الكود": s["code"], "الطالب": s["name"],
-                        "الصف": s.get("grade", "-"),
-                        "الحالة": s["attendance"].get(dstr, "حاضر")} for s in filtered])
-
-    edited = st.data_editor(
-        df, key=f"att_{dstr}_{gr}_{mark_all}",
-        hide_index=True, use_container_width=True,
-        disabled=["الكود", "الطالب", "الصف"],
-        column_config={
-            "الحالة": st.column_config.SelectboxColumn(
-                "الحالة", options=["حاضر", "غائب", "متأخر"], required=True,
-            )
-        },
-    )
-
-    if st.button("حفظ سجل الحضور", type="primary", use_container_width=True):
-        target = {"بدون": None, "الكل حاضر": "حاضر", "الكل غائب": "غائب"}[mark_all]
-        by_code = {s["code"]: s for s in students}
-        for _, row in edited.iterrows():
-            if row["الكود"] in by_code:
-                by_code[row["الكود"]]["attendance"][dstr] = target or row["الحالة"]
-        st.success(f"تم حفظ حضور {dstr}.")
+    qa1, qa2, qa3, qa4 = st.columns(4)
+    if qa1.button("✅ الكل حاضر", use_container_width=True, key="qa_p"):
+        for s in filtered:
+            s["attendance"][dstr] = "حاضر"
         st.rerun()
+    if qa2.button("❌ الكل غائب", use_container_width=True, key="qa_a"):
+        for s in filtered:
+            s["attendance"][dstr] = "غائب"
+        st.rerun()
+    if qa3.button("⏰ الكل متأخر", use_container_width=True, key="qa_l"):
+        for s in filtered:
+            s["attendance"][dstr] = "متأخر"
+        st.rerun()
+    if qa4.button("🗑️ إلغاء تسجيل اليوم", use_container_width=True, key="qa_clr"):
+        for s in filtered:
+            s["attendance"].pop(dstr, None)
+        st.rerun()
+
+    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+
+    # رأس الجدول
+    h1, h2, h3, h4 = st.columns([1, 3.5, 1.2, 3])
+    h1.markdown("<div style='font-weight:800; font-size:14.5px; color:var(--muted); padding-right:6px;'>الكود</div>", unsafe_allow_html=True)
+    h2.markdown("<div style='font-weight:800; font-size:14.5px; color:var(--muted); padding-right:6px;'>الطالب</div>", unsafe_allow_html=True)
+    h3.markdown("<div style='font-weight:800; font-size:14.5px; color:var(--muted); padding-right:6px;'>الصف</div>", unsafe_allow_html=True)
+    h4.markdown("<div style='font-weight:800; font-size:14.5px; color:var(--muted); padding-right:6px;'>الحالة</div>", unsafe_allow_html=True)
+
+    # الصفوف
+    for s in filtered:
+        cur_val = s["attendance"].get(dstr, "حاضر")
+        row_html = (
+            "<div class='att-row'>"
+            f"<div class='code'>{s['code']}</div>"
+            f"<div class='name'>{s['name']}</div>"
+            f"<div class='grade'>{s.get('grade', '-')}</div>"
+            "</div>"
+        )
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            st.markdown(row_html, unsafe_allow_html=True)
+        with col2:
+            st.markdown("<div class='att-row-wrap'>", unsafe_allow_html=True)
+            new_val = st.radio(
+                "",
+                ATT_OPTIONS,
+                index=ATT_OPTIONS.index(cur_val),
+                horizontal=True,
+                key=f"att_{dstr}_{s['id']}",
+                label_visibility="collapsed",
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+            if new_val != cur_val:
+                s["attendance"][dstr] = new_val
+                st.rerun()
+
+    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+    if st.button("💾 حفظ ومتابعة", type="primary", use_container_width=True, key="save_att"):
+        st.success(f"تم حفظ حضور {dstr}.")
 
     section("ملخص تراكمي")
     rows = []
