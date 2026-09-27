@@ -937,9 +937,6 @@ def init_data():
 # صفحة الدخول
 # ==========================================================
 def login_page():
-    if 'show_password' not in st.session_state:
-        st.session_state.show_password = False
-
     st.markdown("<div style='height:4vh'></div>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 1.15, 1])
     with c2:
@@ -954,24 +951,11 @@ def login_page():
         )
         st.markdown(brand_html, unsafe_allow_html=True)
 
-        # --- الجزء الجديد للباسورد بعين احترافية ---
-        identifier = st.text_input("اسم المستخدم أو البريد الإلكتروني")
-        
-        col1, col2 = st.columns([5, 1])
-        with col1:
-            password = st.text_input(
-                "كلمة المرور", 
-                type="text" if st.session_state.show_password else "password",
-                key="pass_input"
-            )
-        with col2:
-            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-            icon = "🙈" if st.session_state.show_password else "👁️"
-            if st.button(icon, key="eye_toggle", use_container_width=True):
-                st.session_state.show_password = not st.session_state.show_password
-                st.rerun()
-
-        ok = st.button("تسجيل الدخول", use_container_width=True, type="primary")
+        with st.form("login_form", clear_on_submit=False):
+            identifier = st.text_input("اسم المستخدم أو البريد الإلكتروني")
+            password = st.text_input("كلمة المرور", type="password")
+            ok = st.form_submit_button("تسجيل الدخول",
+                                       use_container_width=True, type="primary")
 
         st.markdown(
             f"<div class='login-foot'>الإصدار {APP_VERSION}</div>",
@@ -998,7 +982,6 @@ def login_page():
             st.session_state.email = user["email"]
             st.session_state.current_teacher_id = user.get("teacher_id")
             st.rerun()
-
 
 # ==========================================================
 # Sidebar
