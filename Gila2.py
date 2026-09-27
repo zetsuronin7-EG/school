@@ -90,6 +90,50 @@ st.markdown(
         text-align: right;
     }
 
+    /* ---------- إخفاء جملة "Press Enter to submit form" ---------- */
+    div[data-testid="InputInstructions"] {
+        display: none !important;
+    }
+    small[data-testid="InputInstructions"] {
+        display: none !important;
+    }
+    .stTextInput small, .stNumberInput small, .stTextArea small,
+    .stDateInput small, .stSelectbox small {
+        display: none !important;
+    }
+
+    /* ---------- تنسيق أيقونة العين (إظهار كلمة المرور) ---------- */
+    button[aria-label="Show password"],
+    button[aria-label="Hide password"] {
+        background-color: transparent !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #adb5bd !important;
+        padding: 4px 8px !important;
+        margin: 0 !important;
+        outline: none !important;
+        transition: color 0.2s ease;
+        min-width: 24px !important;
+    }
+    button[aria-label="Show password"]:hover,
+    button[aria-label="Hide password"]:hover {
+        color: #0d6efd !important;
+        background-color: transparent !important;
+    }
+    /* إزالة أي إطار أبيض حول زر العين */
+    div[data-baseweb="input"] button {
+        background-color: transparent !important;
+        border: none !important;
+    }
+    /* إخفاء الزر الأبيض الافتراضي للمتصفح */
+    input[type="password"]::-webkit-credentials-auto-fill-button,
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     /* ---------- الأزرار ---------- */
     .stButton > button,
     .stFormSubmitButton > button,
@@ -413,6 +457,30 @@ def init_data():
 
     st.session_state.teachers = teachers
 
+    # ---------- دفتر الجلسات (بيانات تجريبية) ----------
+    st.session_state.sessions_log = [
+        {
+            "teacher": "أ. خالد سعيد رمضان",
+            "date": (date.today() - timedelta(days=1)).isoformat(),
+            "class": "الأول",
+            "specialty": "كهرباء",
+            "description": "ورشة عملية",
+            "session": "حصة 1",
+            "duration": 90,
+            "notes": "تم شرح مبادئ الدوائر الكهربائية.",
+        },
+        {
+            "teacher": "أ. منى عبد الحميد علي",
+            "date": (date.today() - timedelta(days=2)).isoformat(),
+            "class": "الثاني",
+            "specialty": "ميكانيكا",
+            "description": "شرح نظري",
+            "session": "حصة 2",
+            "duration": 60,
+            "notes": "تم حل تمارين الفصل الأول.",
+        },
+    ]
+
 
 # ==========================================================
 # شاشة تسجيل الدخول
@@ -431,10 +499,8 @@ def login_page():
         )
 
         with st.form("login_form", clear_on_submit=False):
-            username = st.text_input("👤 اسم المستخدم", placeholder="اكتب اسم المستخدم")
-            password = st.text_input(
-                "🔑 كلمة المرور", type="password", placeholder="اكتب كلمة المرور"
-            )
+            username = st.text_input("👤 اسم المستخدم")
+            password = st.text_input("🔑 كلمة المرور", type="password")
             submitted = st.form_submit_button("🔓 تسجيل الدخول", use_container_width=True)
 
         if submitted:
@@ -600,7 +666,6 @@ def page_students():
         ["📋 قائمة الطلاب", "➕ إضافة طالب جديد", "🗂️ الملف الشخصي للطالب"]
     )
 
-    # ---------- قائمة الطلاب ----------
     with tab_list:
         students = st.session_state.students
         if not students:
@@ -640,7 +705,6 @@ def page_students():
                 st.success("تم حذف الطالب بنجاح.")
                 st.rerun()
 
-    # ---------- إضافة طالب ----------
     with tab_add:
         with st.form("add_student_form", clear_on_submit=True):
             c1, c2 = st.columns(2)
@@ -649,12 +713,10 @@ def page_students():
             national_id = c1.text_input("الرقم القومي")
             father_job = c2.text_input("مهنة الأب")
             phones_txt = c1.text_input(
-                "أرقام تليفون الطالب (افصل بينها بفاصلة ,)",
-                placeholder="01011112222, 01011113333",
+                "أرقام تليفون الطالب (افصل بينها بفاصلة ,)"
             )
             parent_phones_txt = c2.text_input(
-                "أرقام تليفون ولي الأمر (افصل بينها بفاصلة ,)",
-                placeholder="01211112222, 01211113333",
+                "أرقام تليفون ولي الأمر (افصل بينها بفاصلة ,)"
             )
             notes = st.text_area("ملاحظات", value="")
 
@@ -687,7 +749,6 @@ def page_students():
                 )
                 st.success(f"✅ تمت إضافة الطالب {name} بنجاح.")
 
-    # ---------- الملف الشخصي ----------
     with tab_profile:
         students = st.session_state.students
         if not students:
@@ -990,6 +1051,81 @@ def page_attendance():
 
 
 # ==========================================================
+# صفحة: دفتر الجلسات
+# ==========================================================
+def page_sessions_log():
+    st.markdown("## 📓 دفتر الجلسات")
+    st.markdown("تسجيل الحصص التي تم تدريسها فعلياً")
+    st.markdown("---")
+
+    teachers = st.session_state.teachers
+    if not teachers:
+        st.warning("لا يوجد مدرسون مسجلون حتى الآن.")
+        return
+
+    with st.form("add_session_form", clear_on_submit=True):
+        c1, c2, c3 = st.columns(3)
+        teacher_options = {f"{t['name']} - {t['code']}": t["name"] for t in teachers}
+        selected_teacher_label = c1.selectbox("المدرس", list(teacher_options.keys()))
+        teacher_name = teacher_options[selected_teacher_label]
+        session_date = c2.date_input("التاريخ", value=date.today())
+        class_options = ["الأول", "الثاني", "الثالث"]
+        selected_class = c3.selectbox("الصف", class_options)
+
+        c4, c5, c6 = st.columns(3)
+        specialty_options = ["كهرباء", "ميكانيكا", "إلكترونيات", "عام"]
+        selected_specialty = c4.selectbox("التخصص", specialty_options)
+        description = c5.text_input("الوصف")
+        session_options = [f"حصة {i}" for i in range(1, 9)]
+        selected_session = c6.selectbox("الحصة", session_options)
+
+        c7, c8 = st.columns([1, 2])
+        duration = c7.number_input(
+            "المدة (دقيقة)", min_value=0, max_value=300, value=90, step=5
+        )
+        notes = c8.text_input("ملاحظات")
+
+        submitted = st.form_submit_button("💾 حفظ الجلسة", use_container_width=True)
+
+    if submitted:
+        new_session = {
+            "teacher": teacher_name,
+            "date": session_date.isoformat(),
+            "class": selected_class,
+            "specialty": selected_specialty,
+            "description": description.strip(),
+            "session": selected_session,
+            "duration": int(duration),
+            "notes": notes.strip(),
+        }
+        st.session_state.sessions_log.append(new_session)
+        st.success("✅ تم حفظ الجلسة بنجاح.")
+        st.rerun()
+
+    st.markdown("---")
+    st.markdown("### 📋 سجل الجلسات")
+    if not st.session_state.sessions_log:
+        st.info("لا يوجد جلسات مسجلة حتى الآن.")
+    else:
+        df_sessions = pd.DataFrame(st.session_state.sessions_log)
+        df_sessions.columns = [
+            "المدرس",
+            "التاريخ",
+            "الصف",
+            "التخصص",
+            "الوصف",
+            "الحصة",
+            "المدة (دقيقة)",
+            "ملاحظات",
+        ]
+        st.dataframe(df_sessions, use_container_width=True, hide_index=True)
+
+        if st.button("🗑️ حذف جميع الجلسات", key="clear_sessions"):
+            st.session_state.sessions_log = []
+            st.rerun()
+
+
+# ==========================================================
 # صفحة: المستحقات المالية
 # ==========================================================
 def page_finance():
@@ -1134,6 +1270,7 @@ def main():
                 "👤 بيانات مدير المدرسة",
                 "🎓 الطلاب",
                 "👨‍🏫 المدرسين",
+                "📓 دفتر الجلسات",
                 "✅ الحضور والغياب",
                 "💰 المستحقات المالية",
                 "🔐 حسابات المعلمين",
@@ -1165,6 +1302,8 @@ def main():
         page_students()
     elif choice == "👨‍🏫 المدرسين":
         page_teachers()
+    elif choice == "📓 دفتر الجلسات":
+        page_sessions_log()
     elif choice == "✅ الحضور والغياب":
         page_attendance()
     elif choice == "💰 المستحقات المالية":
