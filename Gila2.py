@@ -90,7 +90,7 @@ st.markdown(
         text-align: right;
     }
 
-    /* ---------- إخفاء جملة Press Enter to submit form ---------- */
+    /* ---------- إخفاء جملة "Press Enter to submit form" ---------- */
     div[data-testid="InputInstructions"] {
         display: none !important;
     }
@@ -104,23 +104,20 @@ st.markdown(
 
     /* ---------- تنسيق أيقونة العين (إظهار كلمة المرور) ---------- */
     button[aria-label="Show password"],
-    button[aria-label="Hide password"],
-    button[aria-label="إظهار كلمة المرور"],
-    button[aria-label="إخفاء كلمة المرور"] {
+    button[aria-label="Hide password"] {
         background-color: transparent !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        color: #6c757d !important;
-        padding: 4px 6px !important;
+        color: #adb5bd !important;
+        padding: 4px 8px !important;
         margin: 0 !important;
         outline: none !important;
         transition: color 0.2s ease;
+        min-width: 24px !important;
     }
     button[aria-label="Show password"]:hover,
-    button[aria-label="Hide password"]:hover,
-    button[aria-label="إظهار كلمة المرور"]:hover,
-    button[aria-label="إخفاء كلمة المرور"]:hover {
+    button[aria-label="Hide password"]:hover {
         color: #0d6efd !important;
         background-color: transparent !important;
     }
@@ -129,7 +126,7 @@ st.markdown(
         background-color: transparent !important;
         border: none !important;
     }
-    /* إزالة الزر الأبيض الذي قد يظهر في بعض المتصفحات */
+    /* إخفاء الزر الأبيض الافتراضي للمتصفح */
     input[type="password"]::-webkit-credentials-auto-fill-button,
     input[type="password"]::-ms-reveal,
     input[type="password"]::-ms-clear {
@@ -715,7 +712,9 @@ def page_students():
             code = c2.text_input("الكود")
             national_id = c1.text_input("الرقم القومي")
             father_job = c2.text_input("مهنة الأب")
-            phones_txt = c1.text_input("أرقام تليفون الطالب (افصل بينها بفاصلة ,)")
+            phones_txt = c1.text_input(
+                "أرقام تليفون الطالب (افصل بينها بفاصلة ,)"
+            )
             parent_phones_txt = c2.text_input(
                 "أرقام تليفون ولي الأمر (افصل بينها بفاصلة ,)"
             )
@@ -1065,7 +1064,6 @@ def page_sessions_log():
         return
 
     with st.form("add_session_form", clear_on_submit=True):
-        st.markdown("### ➕ تسجيل جلسة جديدة")
         c1, c2, c3 = st.columns(3)
         teacher_options = {f"{t['name']} - {t['code']}": t["name"] for t in teachers}
         selected_teacher_label = c1.selectbox("المدرس", list(teacher_options.keys()))
@@ -1258,7 +1256,9 @@ def main():
             unsafe_allow_html=True,
         )
         st.markdown("---")
-        st.markdown(f"**👋 مرحباً:** {st.session_state.get('display_name', '')}")
+        st.markdown(
+            f"**👋 مرحباً:** {st.session_state.get('display_name', '')}"
+        )
         st.markdown(
             f"**🔑 الصلاحية:** {'مدير المدرسة' if role == 'admin' else 'معلم'}"
         )
@@ -1289,6 +1289,7 @@ def main():
             st.session_state.current_teacher_id = None
             st.rerun()
 
+    # ---------- توجيه الصفحات ----------
     if role == "teacher":
         page_attendance()
         return
