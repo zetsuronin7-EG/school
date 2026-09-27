@@ -23,18 +23,15 @@ st.set_page_config(
 )
 
 # ==========================================================
-# التنسيق العام والاحترافي (Dark Theme + RTL)
+# التنسيق العام واتجاه RTL + نقل القائمة الجانبية لليمين
 # ==========================================================
 st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
 
-    /* ---------- الإعدادات العامة ---------- */
     html, body, [class*="css"], .stApp {
         font-family: 'Cairo', sans-serif !important;
-        background-color: #0f172a !important; /* خلفية داكنة أنيقة */
-        color: #f8fafc !important;
     }
 
     .stApp {
@@ -42,7 +39,7 @@ st.markdown(
         text-align: right;
     }
 
-    /* ---------- القائمة الجانبية ---------- */
+    /* ---------- نقل القائمة الجانبية إلى اليمين ---------- */
     div[data-testid="stAppViewContainer"] {
         flex-direction: row-reverse;
     }
@@ -52,82 +49,45 @@ st.markdown(
         order: 2;
         right: 0;
         left: auto;
-        background-color: #1e293b !important;
-        border-left: 1px solid #334155;
+        border-left: 2px solid #0d6efd;
+        border-right: none;
     }
     section[data-testid="stSidebar"] * {
         text-align: right !important;
-        color: #f8fafc !important;
     }
     section[data-testid="stSidebar"] .stRadio label {
         display: flex;
         justify-content: flex-start;
         flex-direction: row-reverse;
-        padding: 8px 10px;
-        border-radius: 8px;
-        transition: background 0.3s;
     }
-    section[data-testid="stSidebar"] .stRadio label:hover {
-        background-color: #334155;
+    [data-testid="stSidebarNav"] {
+        direction: rtl;
     }
 
-    /* ---------- توحيد الحقول والقوائم المنسدلة ---------- */
-    /* إزالة الخلفية البيضاء من جميع الحقول */
-    div[data-baseweb="input"], 
-    div[data-baseweb="textarea"], 
-    div[data-baseweb="select"] {
-        background-color: #1e293b !important;
-        border: 1px solid #334155 !important;
-        border-radius: 8px !important;
-        color: #f8fafc !important;
+    /* ---------- الحقول والنصوص ---------- */
+    input, textarea, select,
+    .stTextInput input, .stNumberInput input,
+    .stDateInput input, .stTextArea textarea {
+        direction: rtl !important;
+        text-align: right !important;
     }
-    
-    /* لون النص داخل الحقول */
-    div[data-baseweb="input"] input, 
-    div[data-baseweb="textarea"] textarea,
-    div[data-baseweb="select"] div {
-        color: #f8fafc !important;
-        background-color: transparent !important;
+    div[data-baseweb="input"], div[data-baseweb="textarea"] {
+        direction: rtl;
     }
-
-    /* إصلاح القوائم المنسدلة عند فتحها */
+    div[data-baseweb="select"] > div {
+        direction: rtl;
+        text-align: right;
+    }
     div[data-baseweb="popover"] ul,
     div[data-baseweb="menu"] {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
+        direction: rtl;
+        text-align: right;
     }
-    div[data-baseweb="popover"] li {
-        color: #f8fafc !important;
+    label, p, h1, h2, h3, h4, h5, h6, span, div {
+        text-align: right;
     }
-    div[data-baseweb="popover"] li:hover {
-        background-color: #334155 !important;
-    }
-
-    /* إصلاح حقول التاريخ والأرقام */
-    div[data-testid="stDateInput"] input,
-    div[data-testid="stNumberInput"] input {
-        color: #f8fafc !important;
-        background-color: #1e293b !important;
-    }
-
-    /* ---------- إصلاح أيقونة العين (كلمة المرور) ---------- */
-    button[aria-label="Show password"], 
-    button[aria-label="Hide password"] {
-        background-color: transparent !important;
-        border: none !important;
-        color: #94a3b8 !important;
-        box-shadow: none !important;
-        padding: 0 5px !important;
-    }
-    button[aria-label="Show password"]:hover, 
-    button[aria-label="Hide password"]:hover {
-        color: #3b82f6 !important;
-    }
-    /* إزالة أي حدود غريبة حول الأيقونة */
-    div[data-baseweb="input"] button {
-        border: none !important;
-        background: transparent !important;
+    .stMarkdown, .stText, .stCaption {
+        text-align: right;
     }
 
     /* ---------- الأزرار ---------- */
@@ -136,88 +96,76 @@ st.markdown(
     .stDownloadButton > button {
         direction: rtl;
         font-family: 'Cairo', sans-serif !important;
-        border-radius: 8px;
+        border-radius: 12px;
         font-weight: 700;
-        background-color: #3b82f6 !important;
-        color: #ffffff !important;
-        border: none !important;
-        padding: 10px 20px !important;
-        transition: all 0.3s;
-    }
-    .stButton > button:hover,
-    .stFormSubmitButton > button:hover {
-        background-color: #2563eb !important;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        width: 100%;
     }
 
     /* ---------- الكروت والمؤشرات ---------- */
     [data-testid="stMetric"] {
         direction: rtl;
         text-align: right;
-        background-color: #1e293b !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #f8fbff 0%, #e6f0ff 100%);
+        border: 1px solid #cfe2ff;
+        border-radius: 16px;
         padding: 16px 18px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.08);
     }
     [data-testid="stMetricLabel"] {
         text-align: right !important;
         font-weight: 700;
-        color: #94a3b8 !important;
     }
     [data-testid="stMetricValue"] {
         text-align: right !important;
-        color: #3b82f6 !important;
+        color: #0d6efd;
         font-weight: 900;
     }
 
     /* ---------- الجداول ---------- */
     [data-testid="stDataFrame"], [data-testid="stDataEditor"] {
         direction: rtl;
-        background-color: #1e293b !important;
-        border-radius: 8px;
-        border: 1px solid #334155;
     }
 
     /* ---------- التبويبات ---------- */
     .stTabs [data-baseweb="tab-list"] {
         direction: rtl;
         gap: 8px;
-        background-color: transparent;
     }
     .stTabs [data-baseweb="tab"] {
         font-family: 'Cairo', sans-serif !important;
         font-weight: 700;
-        border-radius: 8px 8px 0 0;
-        color: #94a3b8 !important;
-        background-color: #1e293b !important;
-        border: 1px solid #334155 !important;
-        border-bottom: none !important;
-    }
-    .stTabs [aria-selected="true"] {
-        color: #3b82f6 !important;
-        border-top: 3px solid #3b82f6 !important;
-        background-color: #0f172a !important;
+        border-radius: 10px 10px 0 0;
     }
 
-    /* ---------- صناديق التنبيه ---------- */
-    .stAlert {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
-        border-radius: 8px;
+    /* ---------- صندوق تسجيل الدخول ---------- */
+    .login-box {
+        background: linear-gradient(135deg, #ffffff 0%, #eef5ff 100%);
+        border: 2px solid #0d6efd;
+        border-radius: 20px;
+        padding: 26px 22px;
+        box-shadow: 0 6px 22px rgba(13, 110, 253, 0.15);
     }
-
-    /* ---------- عناوين ونصوص ---------- */
-    h1, h2, h3, h4, h5, h6 {
-        color: #f8fafc !important;
-        font-weight: 700 !important;
+    .app-title {
+        text-align: center !important;
+        color: #0d6efd;
+        font-weight: 900;
+        font-size: 34px;
+        margin-bottom: 4px;
     }
-    p, span, div {
-        color: #cbd5e1;
+    .app-sub {
+        text-align: center !important;
+        color: #495057;
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 10px;
     }
-    .stCaption {
-        color: #94a3b8 !important;
+    .card {
+        background: #ffffff;
+        border: 1px solid #dbe7ff;
+        border-radius: 16px;
+        padding: 16px 18px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        margin-bottom: 12px;
     }
     </style>
     """,
@@ -465,9 +413,6 @@ def init_data():
 
     st.session_state.teachers = teachers
 
-    # ---------- دفتر الجلسات (بيانات افتراضية) ----------
-    st.session_state.sessions_log = []
-
 
 # ==========================================================
 # شاشة تسجيل الدخول
@@ -477,18 +422,19 @@ def login_page():
     c1, c2, c3 = st.columns([1, 1.3, 1])
     with c2:
         st.markdown(
-            "<div class='login-box' style='background-color: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 26px 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);'>"
-            "<div class='app-title' style='text-align: center; color: #3b82f6; font-weight: 900; font-size: 32px; margin-bottom: 4px;'>🏫 مدرسة التوكل جيلا</div>"
-            "<div class='app-sub' style='text-align: center; color: #94a3b8; font-weight: 600; font-size: 16px; margin-bottom: 10px;'>مدرسة نانوي صناعي — نظام تدريب مزدوج</div>"
-            "<hr style='border: 1px solid #334155'>"
+            "<div class='login-box'>"
+            "<div class='app-title'>🏫 مدرسة التوكل جيلا</div>"
+            "<div class='app-sub'>مدرسة نانوي صناعي — نظام تدريب مزدوج</div>"
+            "<hr style='border:1px solid #dbe7ff'>"
             "</div>",
             unsafe_allow_html=True,
         )
 
         with st.form("login_form", clear_on_submit=False):
-            # تم إزالة الـ placeholder لتجنب ظهور نصوص "Press Enter to submit form"
-            username = st.text_input("👤 اسم المستخدم")
-            password = st.text_input("🔑 كلمة المرور", type="password")
+            username = st.text_input("👤 اسم المستخدم", placeholder="اكتب اسم المستخدم")
+            password = st.text_input(
+                "🔑 كلمة المرور", type="password", placeholder="اكتب كلمة المرور"
+            )
             submitted = st.form_submit_button("🔓 تسجيل الدخول", use_container_width=True)
 
         if submitted:
@@ -630,7 +576,7 @@ def page_manager():
     mm = st.session_state.manager
     st.markdown(
         f"""
-        <div class='card' style='background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px;'>
+        <div class='card'>
         <b>الاسم:</b> {mm['name']}<br>
         <b>الرقم القومي:</b> {mm['national_id']}<br>
         <b>رقم التليفون:</b> {mm['phone']}<br>
@@ -654,6 +600,7 @@ def page_students():
         ["📋 قائمة الطلاب", "➕ إضافة طالب جديد", "🗂️ الملف الشخصي للطالب"]
     )
 
+    # ---------- قائمة الطلاب ----------
     with tab_list:
         students = st.session_state.students
         if not students:
@@ -693,6 +640,7 @@ def page_students():
                 st.success("تم حذف الطالب بنجاح.")
                 st.rerun()
 
+    # ---------- إضافة طالب ----------
     with tab_add:
         with st.form("add_student_form", clear_on_submit=True):
             c1, c2 = st.columns(2)
@@ -701,10 +649,12 @@ def page_students():
             national_id = c1.text_input("الرقم القومي")
             father_job = c2.text_input("مهنة الأب")
             phones_txt = c1.text_input(
-                "أرقام تليفون الطالب (افصل بينها بفاصلة ,)"
+                "أرقام تليفون الطالب (افصل بينها بفاصلة ,)",
+                placeholder="01011112222, 01011113333",
             )
             parent_phones_txt = c2.text_input(
-                "أرقام تليفون ولي الأمر (افصل بينها بفاصلة ,)"
+                "أرقام تليفون ولي الأمر (افصل بينها بفاصلة ,)",
+                placeholder="01211112222, 01211113333",
             )
             notes = st.text_area("ملاحظات", value="")
 
@@ -737,6 +687,7 @@ def page_students():
                 )
                 st.success(f"✅ تمت إضافة الطالب {name} بنجاح.")
 
+    # ---------- الملف الشخصي ----------
     with tab_profile:
         students = st.session_state.students
         if not students:
@@ -764,7 +715,7 @@ def page_students():
         st.markdown("### 📌 البيانات الشخصية")
         st.markdown(
             f"""
-            <div class='card' style='background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px;'>
+            <div class='card'>
             <b>الاسم:</b> {student['name']}<br>
             <b>الكود:</b> {student['code']}<br>
             <b>الرقم القومي:</b> {student['national_id'] or '-'}<br>
@@ -978,7 +929,7 @@ def page_attendance():
     selected_date = c1.date_input("📅 اختر التاريخ", value=date.today())
     dstr = selected_date.isoformat()
     c2.markdown(
-        f"<div class='card' style='background-color: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-top:26px'>"
+        f"<div class='card' style='margin-top:26px'>"
         f"جارٍ تسجيل حضور يوم: <b>{dstr}</b></div>",
         unsafe_allow_html=True,
     )
@@ -1149,96 +1100,6 @@ def page_accounts():
 
 
 # ==========================================================
-# صفحة: دفتر الجلسات (تم إصلاح الواجهة بالكامل)
-# ==========================================================
-def page_sessions_log():
-    st.markdown("## 📓 دفتر الجلسات")
-    st.markdown("تسجيل الحصص التي تم تدريسها فعلياً")
-    st.markdown("---")
-
-    teachers = st.session_state.teachers
-    if not teachers:
-        st.warning("لا يوجد مدرسون مسجلون حتى الآن.")
-        return
-
-    # نموذج تسجيل جلسة جديدة
-    with st.form("add_session_form", clear_on_submit=True):
-        st.markdown("### ➕ تسجيل جلسة جديدة")
-        
-        c1, c2, c3 = st.columns(3)
-        
-        # قائمة المدرسين
-        teacher_options = {f"{t['name']} - {t['code']}": t["name"] for t in teachers}
-        selected_teacher_label = c1.selectbox("المدرس", list(teacher_options.keys()))
-        teacher_name = teacher_options[selected_teacher_label]
-        
-        # التاريخ
-        session_date = c2.date_input("التاريخ", value=date.today())
-        
-        # الصف
-        class_options = ["الأول", "الثاني", "الثالث"]
-        selected_class = c3.selectbox("الصف", class_options)
-        
-        c4, c5, c6 = st.columns(3)
-        
-        # التخصص
-        specialty_options = ["كهرباء", "ميكانيكا", "إلكترونيات", "عام"]
-        selected_specialty = c4.selectbox("التخصص", specialty_options)
-        
-        # الوصف
-        description = c5.text_input("الوصف")
-        
-        # الحصة
-        session_options = [f"حصة {i}" for i in range(1, 9)]
-        selected_session = c6.selectbox("الحصة", session_options)
-        
-        c7, c8 = st.columns([1, 2])
-        
-        # المدة
-        duration = c7.number_input("المدة (دقيقة)", min_value=0, max_value=300, value=90, step=5)
-        
-        # ملاحظات
-        notes = c8.text_input("ملاحظات")
-        
-        submitted = st.form_submit_button("💾 حفظ الجلسة", use_container_width=True)
-
-    if submitted:
-        new_session = {
-            "teacher": teacher_name,
-            "date": session_date.isoformat(),
-            "class": selected_class,
-            "specialty": selected_specialty,
-            "description": description.strip(),
-            "session": selected_session,
-            "duration": int(duration),
-            "notes": notes.strip(),
-        }
-        st.session_state.sessions_log.append(new_session)
-        st.success("✅ تم حفظ الجلسة بنجاح.")
-        st.rerun()
-
-    st.markdown("---")
-    st.markdown("### 📋 سجل الجلسات")
-    
-    if not st.session_state.sessions_log:
-        st.info("لا يوجد جلسات مسجلة حتى الآن. قم بتسجيل جلسة جديدة من الأعلى.")
-    else:
-        # عرض الجلسات في جدول
-        df_sessions = pd.DataFrame(st.session_state.sessions_log)
-        # إعادة تسمية الأعمدة للعرض
-        df_sessions.columns = [
-            "المدرس", "التاريخ", "الصف", "التخصص", 
-            "الوصف", "الحصة", "المدة (دقيقة)", "ملاحظات"
-        ]
-        st.dataframe(df_sessions, use_container_width=True, hide_index=True)
-        
-        # زر لحذف جميع الجلسات (اختياري)
-        if st.button("🗑️ حذف جميع الجلسات", key="clear_sessions"):
-            st.session_state.sessions_log = []
-            st.rerun()
-
-
-# ==========================================================
 # البرنامج الرئيسي
 # ==========================================================
 def main():
@@ -1253,8 +1114,8 @@ def main():
     with st.sidebar:
         st.markdown(
             f"<div style='text-align:right'>"
-            f"<h3 style='color:#3b82f6;margin-bottom:2px'>🏫 التوكل جيلا</h3>"
-            f"<small style='color:#94a3b8'>مدرسة نانوي صناعي — تدريب مزدوج</small>"
+            f"<h3 style='color:#0d6efd;margin-bottom:2px'>🏫 التوكل جيلا</h3>"
+            f"<small>مدرسة نانوي صناعي — تدريب مزدوج</small>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -1274,7 +1135,6 @@ def main():
                 "🎓 الطلاب",
                 "👨‍🏫 المدرسين",
                 "✅ الحضور والغياب",
-                "📓 دفتر الجلسات",
                 "💰 المستحقات المالية",
                 "🔐 حسابات المعلمين",
             ]
@@ -1307,8 +1167,6 @@ def main():
         page_teachers()
     elif choice == "✅ الحضور والغياب":
         page_attendance()
-    elif choice == "📓 دفتر الجلسات":
-        page_sessions_log()
     elif choice == "💰 المستحقات المالية":
         page_finance()
     elif choice == "🔐 حسابات المعلمين":
